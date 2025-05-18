@@ -1,0 +1,21 @@
+---
+name: nushop
+
+windows:
+  - name: code
+    panes:
+      - name: Editor
+        commands:
+          - command: ^$env.EDITOR
+        focus: true #ensure editor pane is selected
+
+  - name: misc
+    flex_direction: row
+    panes:
+      - flex: 1
+      - flex: 1
+        path: . # optional relative or absolute path
+        flex_direction: column
+        panes:
+          - flex: 2
+          - flex: 5
