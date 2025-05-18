@@ -1,5 +1,7 @@
 ---
 name: nushop
+env:
+  KUBECONFIG: ./kind/kube.config
 
 windows:
   - name: code
@@ -14,8 +16,21 @@ windows:
     panes:
       - flex: 1
       - flex: 1
-        path: . # optional relative or absolute path
-        flex_direction: column
-        panes:
-          - flex: 2
-          - flex: 5
+
+  - name: k9s
+    panes:
+      - script: |
+          #!/usr/bin/env nu
+
+          if (kind get clusters | find "nushop" | is-empty) {
+            kind create cluster --name nushop --config ./kind/kind-cluster.yaml
+            kind get kubeconfig -n nushop
+            | from yaml
+            | reject clusters.0.cluster.certificate-authority-data
+            | upsert clusters.0.cluster.insecure-skip-tls-verify true
+            | upsert clusters.0.cluster.server https://127.0.0.1:7543
+            | to yaml
+            | save -f ./kind/kube.config
+            kubectx kind-nushop
+          }
+          k9s
