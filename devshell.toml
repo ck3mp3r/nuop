@@ -1,0 +1,81 @@
+# https://numtide.github.io/devshell
+packages = [
+  "nushell",
+  "helm-ls",
+  "pyright",
+  "black"
+]
+
+devshell.startup.foo.text = '''
+mkdir -p $PRJ_ROOT/kind
+export KUBECONFIG=$PRJ_ROOT/kind/kube.config
+'''
+
+[[commands]]
+package = "colima"
+
+[[commands]]
+name = "helm"
+package = "kubernetes-helm"
+
+[[commands]]
+package = "kind"
+
+[[commands]]
+package = "kubectl"
+
+[[commands]]
+package = "tilt"
+category = "kubeops"
+
+[[commands]]
+name = "kind-start"
+command = '''
+  COLIMA_IP=$(colima ls --json | jq -r '.address')
+  kind create cluster --config=$PRJ_ROOT/kind/kind-cluster.yaml --name=nushop
+  echo "The cluster IP is: ${COLIMA_IP}"
+'''
+category = "kubeops"
+help = "Start kind cluster"
+
+[[commands]]
+name = "op-clean"
+command = "cd $PRJ_ROOT/operator && make clean"
+category = "operator"
+help = "cargo clean"
+
+[[commands]]
+name = "op-crds"
+command = "cd $PRJ_ROOT/operator && make crds"
+category = "operator"
+help = "Generate crds"
+
+[[commands]]
+name = "op-build"
+command = "cd $PRJ_ROOT/operator && make build"
+help = "build"
+category = "operator"
+
+[[commands]]
+name = "op-tests"
+command = "cd $PRJ_ROOT/operator && make tests"
+help = "Run cargo tests"
+category = "operator"
+
+[[commands]]
+name = "op-clippy"
+command = "cd $PRJ_ROOT/operator && make clippy"
+help = "Run clippy"
+category = "operator"
+
+[[commands]]
+name = "op-fmt"
+command = "cd $PRJ_ROOT/operator && make fmt"
+help = "Run cargo format"
+category = "operator"
+
+[git.hooks]
+enable = true
+
+[git.hooks.pre-push]
+text = "op-tests"
