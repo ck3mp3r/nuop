@@ -1,0 +1,2 @@
+# nushop
+Nushell Operator
