@@ -11,4 +11,4 @@ fmt:
 	cargo fmt
 
 crds:
-	cargo run --bin gen_crds operator/
+	cargo run --bin generate operator/

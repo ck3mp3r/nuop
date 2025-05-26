@@ -3,8 +3,27 @@ name = "operator"
 version = "0.1.0"
 edition = "2024"
 
+[profile.release]
+opt-level = "z" # Optimize for size
+lto = true # Enable Link Time Optimization
+codegen-units = 1 # Reduce the number of codegen units to improve optimization
+debug = false # Disable debug information
+panic = "abort" # Abort on panic to reduce binary size
+strip = "symbols" # Strip symbols to reduce binary size
+
 [lib]
 name = "operator"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow = "1.0.98"
+k8s-openapi = { version = "0.25.0", features = ["latest","schemars" ] }
+kube = { version = "1.0.0", features = ["runtime", "derive"] }
+schemars = "0.8.22"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+serde_yaml = "0.9.34"
+
+[[bin]]
+name = "generate"
+path = "src/manager/model/generate.rs"
