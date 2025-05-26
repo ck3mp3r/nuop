@@ -1,0 +1,12 @@
+/.direnv/
+tmp
+
+
+# Added by cargo
+
+target
+result
+
+kind/kube.config
+
+.DS_Store
