@@ -1,4 +1,7 @@
+use crate::nuop::reconciler::config::Config;
+use anyhow::{Context, Result};
 use std::{path::PathBuf, process::Command};
+use tracing::debug;
 
 pub fn get_script_config(script: &PathBuf) -> Result<Config> {
     let output = Command::new(script)
