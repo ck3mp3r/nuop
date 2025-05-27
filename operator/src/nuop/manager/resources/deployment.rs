@@ -73,6 +73,13 @@ pub(crate) fn generate_deployment(
             template: PodTemplateSpec {
                 metadata: Some(ObjectMeta {
                     labels: Some(BTreeMap::from([("app".to_string(), meta.name.to_string())])),
+                    annotations: meta.annotations.as_ref().and_then(|annotations| {
+                        annotations.get("nuop.hash").map(|hash| {
+                            let mut template_annotations = BTreeMap::new();
+                            template_annotations.insert("nuop.hash".to_string(), hash.clone());
+                            template_annotations
+                        })
+                    }),
                     ..Default::default()
                 }),
                 spec: Some(PodSpec {
@@ -113,6 +120,14 @@ pub(crate) fn has_drifted(existing: &Deployment, desired: &Deployment) -> bool {
             debug!(
                 "Replicas have diverged: existing {:?} vs. desired {:?}",
                 existing_spec.replicas, desired_spec.replicas
+            );
+            return true;
+        }
+
+        if existing.metadata.annotations != desired.metadata.annotations {
+            debug!(
+                "Annotations have diverged: {:?} vs. {:?}",
+                existing.metadata.annotations, desired.metadata.annotations
             );
             return true;
         }

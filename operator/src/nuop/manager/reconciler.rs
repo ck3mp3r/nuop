@@ -74,6 +74,9 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
                 info!("Deployment {} has drifted. Patching...", deployment_name);
 
                 let patch = Patch::Merge(serde_json::json!({
+                    "metadata": {
+                        "annotations": desired_deployment.metadata.annotations
+                    },
                     "spec": desired_deployment.spec
                 }));
                 deployment_api
