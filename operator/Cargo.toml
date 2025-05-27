@@ -17,13 +17,17 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.98"
+futures = "0.3.31"
 k8s-openapi = { version = "0.25.0", features = ["latest","schemars" ] }
 kube = { version = "1.0.0", features = ["runtime", "derive"] }
 schemars = "0.8.22"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yaml = "0.9.34"
+tokio = { version = "1.45.1", features = ["full"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["fmt", "json"] }
 
 [[bin]]
 name = "generate"
-path = "src/manager/model/generate.rs"
+path = "src/nuop/manager/model/generate.rs"
