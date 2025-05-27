@@ -2,7 +2,7 @@
 
 # Finalizer identifier
 
-const FINALIZER = "github.com/ck3mp3r/nuop/cfg-repktr/finalizer"
+const FINALIZER = "github.com/ck3mp3r-nuop-cfg-repktr-finalizer"
 # Returns operator config
 def 'main config' [] {
   {
@@ -21,7 +21,7 @@ def 'main config' [] {
 def simplify-config [configpmap] {
   let labels = ($configpmap.metadata.labels | default {})
   let simplified_labels = if ($labels | columns | any {|c| $c == 'app.kubernetes.io/replicated-by' }) {
-    {"app.kubernetes.io/replicated-by": "github.com/ck3mp3r/nuop/cfg-repktr"}
+    {"app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"}
   } else {
     {}
   }
@@ -41,8 +41,8 @@ def build-template [original] {
     metadata: {
       name: $original.metadata.name
       labels: {
-        "app.kubernetes.io/managed-by": "github.com/ck3mp3r/nuop/cfg-repktr"
-        "app.kubernetes.io/replicated-by": "github.com/ck3mp3r/nuop/cfg-repktr"
+        "app.kubernetes.io/managed-by": "github.com-ck3mp3r-nuop-cfg-repktr"
+        "app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"
       }
     }
     type: $original.type
