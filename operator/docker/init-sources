@@ -1,0 +1,66 @@
+#!/usr/bin/env nu
+
+print "Running init script..."
+
+let SCRIPTS_PATH = $env | get --ignore-errors "SCRIPTS_PATH" | default "/scripts"
+let SECRETS_PATH = $env | get --ignore-errors "SECRETS_PATH" | default "/secrets"
+let CONFIG_PATH = $env | get --ignore-errors "CONFIG_PATH" | default "/config"
+
+def mk_temp_dir [] {
+  let tmp_dir = $"/tmp/nu-temp-(random uuid)"
+  mkdir $tmp_dir
+  $tmp_dir
+}
+
+def fetch_source [config] {
+  let credentials = ($config | get credentials --ignore-errors)
+
+  let location = $config.location
+  let tmp_dir = mk_temp_dir
+
+  let parsed = ($location | url parse)
+  let query = $parsed | get query | from url
+  mut repo = $parsed.scheme ++ "://" ++ $parsed.host ++ $parsed.path
+
+  if $credentials != null {
+    let token_present = ($credentials | get token --ignore-errors | is-not-empty)
+
+    if $token_present {
+      let token = (open $"($SECRETS_PATH)/($config.path)/token" | str trim)
+      $repo = $"($parsed.scheme)://git:($credentials.password)@($parsed.host)($parsed.path)"
+    }
+
+    let username_present = ($credentials | get username --ignore-errors | is-not-empty)
+    let password_present = ($credentials | get password --ignore-errors | is-not-empty)
+
+    if $username_present and $password_present {
+      let username = (open $"($SECRETS_PATH)/($config.path)/username" | str trim)
+      let password = (open $"($SECRETS_PATH)/($config.path)/password" | str trim)
+      $repo = $"($parsed.scheme)://($username):($password)@($parsed.host)($parsed.path)"
+    }
+  }
+  let dir = $query.dir
+  let ref = $query.ref
+
+  git clone $repo $tmp_dir
+
+  if ($ref != "") {
+    cd $tmp_dir
+    git checkout $ref
+  }
+
+  let source_dir = if ($dir != "") { $tmp_dir + "/" + $dir } else { $tmp_dir }
+
+  cp -r $source_dir $SCRIPTS_PATH
+}
+
+def main [] {
+  let config_files = glob $"($CONFIG_PATH)/sources/**/*.yaml"
+  let config_data = $config_files | each {|file|
+    open $file
+  }
+
+  $config_data | each {|config|
+    fetch_source $config
+  }
+}

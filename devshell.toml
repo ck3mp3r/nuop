@@ -80,6 +80,17 @@ command = "cd $PRJ_ROOT/operator && NUOP_MODE=manager cargo run --bin operator"
 help = "run operator as manager"
 category = "operator"
 
+[[commands]]
+name = "op-run-standard"
+command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
+help = "Run standard mode operator"
+category = "operator"
+
+[[commands]]
+name = "op-run-managed"
+command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH=$PRJ_ROOT/operator/examples/mappings NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
+help = "Run managed mode operator"
+category = "operator"
 [git.hooks]
 enable = true
 
