@@ -1,6 +1,7 @@
 use kube::api::{Patch, PatchParams, PostParams};
 use kube::{Api, Resource};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 use k8s_openapi::{api::core::v1::ConfigMap, apimachinery::pkg::apis::meta::v1::OwnerReference};
@@ -18,25 +19,38 @@ pub(crate) async fn manage_config_maps(
     configmap_api: &Api<ConfigMap>,
     sources: &[Source],
     mappings: &[Mapping],
-) -> Result<(), kube::Error> {
+) -> Result<String, kube::Error> {
     let patch_params = PatchParams::apply(&field_manager::<NuOperator>());
+    let mut hasher = Sha256::new();
+
     if !mappings.is_empty() {
-        create_or_patch_config_map(
-            &generate_mapping_configmap(deployment_name, mappings, namespace, owner_ref.clone()),
-            configmap_api,
-            &patch_params,
-        )
-        .await?;
+        let mapping_cm =
+            generate_mapping_configmap(deployment_name, mappings, namespace, owner_ref.clone());
+        create_or_patch_config_map(&mapping_cm, configmap_api, &patch_params).await?;
+
+        if let Some(data) = &mapping_cm.data {
+            for (key, value) in data {
+                hasher.update(key);
+                hasher.update(value);
+            }
+        }
     }
+
     if !sources.is_empty() {
-        create_or_patch_config_map(
-            &generate_source_configmap(deployment_name, sources, namespace, owner_ref.clone()),
-            configmap_api,
-            &patch_params,
-        )
-        .await?;
+        let source_cm =
+            generate_source_configmap(deployment_name, sources, namespace, owner_ref.clone());
+        create_or_patch_config_map(&source_cm, configmap_api, &patch_params).await?;
+
+        if let Some(data) = &source_cm.data {
+            for (key, value) in data {
+                hasher.update(key);
+                hasher.update(value);
+            }
+        }
     }
-    Ok(())
+
+    let hash = format!("{:x}", hasher.finalize());
+    Ok(hash)
 }
 
 pub(crate) fn generate_mapping_configmap(

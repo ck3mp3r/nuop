@@ -39,7 +39,7 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
         .clone()
         .unwrap_or_else(|| DEFAULT_IMAGE.to_string());
 
-    manage_config_maps(
+    let sha = manage_config_maps(
         &deployment_name,
         &namespace,
         &owner_ref,
@@ -56,6 +56,11 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
             namespace: &namespace,
             owner_references: generate_owner_reference(obj.as_ref()).map(|o| vec![o]),
             service_account_name,
+            annotations: {
+                let mut annotations = std::collections::BTreeMap::new();
+                annotations.insert("nuop.hash".to_string(), sha.clone());
+                Some(annotations)
+            },
         },
         &image,
         &env_vars,

@@ -22,6 +22,7 @@ pub(crate) struct DeploymentMeta<'a> {
     pub(crate) namespace: &'a str,
     pub(crate) owner_references: Option<Vec<OwnerReference>>,
     pub(crate) service_account_name: Option<String>,
+    pub(crate) annotations: Option<BTreeMap<String, String>>,
 }
 
 pub(crate) fn generate_deployment(
@@ -60,6 +61,7 @@ pub(crate) fn generate_deployment(
             name: Some(meta.name.to_string()),
             namespace: Some(meta.namespace.to_string()),
             owner_references: meta.owner_references.clone(),
+            annotations: meta.annotations.clone(),
             ..Default::default()
         },
         spec: Some(DeploymentSpec {
