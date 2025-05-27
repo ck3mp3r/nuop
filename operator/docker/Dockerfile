@@ -1,4 +1,4 @@
-FROM docker.io/nixos/nix:2.28.0 AS builder
+FROM docker.io/nixos/nix:2.29.0 AS builder
 
 WORKDIR /tmp/build
 
@@ -9,7 +9,7 @@ RUN nix \
   --option filter-syscalls false \
   build
 
-FROM ghcr.io/nushell/nushell:0.103.0-alpine AS final
+FROM ghcr.io/nushell/nushell:0.104.1-alpine AS final
 
 USER root
 RUN apk add \
