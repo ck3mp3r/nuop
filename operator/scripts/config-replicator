@@ -2,15 +2,14 @@
 
 # Finalizer identifier
 
-const FINALIZER = "config-replicator.dev/finalizer"
+const FINALIZER = "github.com/ck3mp3r/nuop/cfg-repktr/finalizer"
 # Returns operator config
 def 'main config' [] {
   {
     name: "config-replicator"
     kind: "ConfigMap"
     labelSelectors: {
-      managedBy: "config-replicator"
-      replicate: "yes"
+      "app.kubernetes.io/replicate": "yes"
     }
     finalizer: $FINALIZER
     requeue_after_noop: 60
@@ -21,8 +20,8 @@ def 'main config' [] {
 # Extracts only the relevant fields of a configmap for comparison
 def simplify-config [configpmap] {
   let labels = ($configpmap.metadata.labels | default {})
-  let simplified_labels = if ($labels | columns | any {|c| $c == 'replicated_by_nush' }) {
-    {replicated_by_nush: ($labels | get replicated_by_nush)}
+  let simplified_labels = if ($labels | columns | any {|c| $c == 'app.kubernetes.io/replicated-by' }) {
+    {"app.kubernetes.io/replicated-by": "github.com/ck3mp3r/nuop/cfg-repktr"}
   } else {
     {}
   }
@@ -42,7 +41,8 @@ def build-template [original] {
     metadata: {
       name: $original.metadata.name
       labels: {
-        replicated_by_nush: "foo"
+        "app.kubernetes.io/managed-by": "github.com/ck3mp3r/nuop/cfg-repktr"
+        "app.kubernetes.io/replicated-by": "github.com/ck3mp3r/nuop/cfg-repktr"
       }
     }
     type: $original.type
