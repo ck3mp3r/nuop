@@ -130,16 +130,22 @@ async fn create_or_patch_config_map(
         let desired_bin_data = desired_cm.binary_data.as_ref();
         let existing_bin_data = existing_cm.binary_data.as_ref();
 
-        if desired_data == existing_data && desired_bin_data == existing_bin_data {
-            tracing::info!("ConfigMap '{}' is up to date", name);
-            return Ok(());
-        }
+        if desired_data != existing_data || desired_bin_data != existing_bin_data {
+            if let Some(resource_version) = existing_cm.metadata.resource_version.clone() {
+                let mut updated_cm = desired_cm.clone();
+                updated_cm.metadata.resource_version = Some(resource_version);
 
-        configmap_api
-            .patch(name, patch_params, &Patch::Apply(desired_cm))
-            .await?;
-        tracing::info!("Patched ConfigMap '{}'", name);
+                tracing::debug!("Updating ConfigMap '{}'", name);
+                configmap_api
+                    .patch(name, patch_params, &Patch::Apply(&updated_cm))
+                    .await?;
+                tracing::info!("Updated ConfigMap '{}'", name);
+            }
+        } else {
+            tracing::info!("ConfigMap '{}' is already up to date", name);
+        }
     } else {
+        tracing::debug!("Attempting to create ConfigMap '{}'", name);
         configmap_api
             .create(&PostParams::default(), desired_cm)
             .await?;

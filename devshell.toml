@@ -76,7 +76,7 @@ category = "operator"
 
 [[commands]]
 name = "op-run-manager"
-command = "cd $PRJ_ROOT/operator && NUOP_MODE=manager cargo run --bin operator"
+command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=manager cargo run --bin operator"
 help = "run operator as manager"
 category = "operator"
 
