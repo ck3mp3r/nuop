@@ -24,4 +24,4 @@ fmt:
 	cargo fmt
 
 crds:
-	cargo run --bin generate operator/
+	cargo run --bin generate operator/ > chart/crds/nuop.yaml
