@@ -32,7 +32,7 @@ category = "kubeops"
 name = "kind-start"
 command = '''
   COLIMA_IP=$(colima ls --json | jq -r '.address')
-  kind create cluster --config=$PRJ_ROOT/kind/kind-cluster.yaml --name=nushop
+  kind create cluster --config=$PRJ_ROOT/kind/kind-cluster.yaml --name=nuop
   echo "The cluster IP is: ${COLIMA_IP}"
 '''
 category = "kubeops"
