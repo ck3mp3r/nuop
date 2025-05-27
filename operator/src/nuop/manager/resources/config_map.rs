@@ -1,5 +1,6 @@
 use kube::api::{Patch, PatchParams, PostParams};
 use kube::{Api, Resource};
+use serde_json::json;
 use std::collections::BTreeMap;
 
 use k8s_openapi::{api::core::v1::ConfigMap, apimachinery::pkg::apis::meta::v1::OwnerReference};
@@ -137,7 +138,14 @@ async fn create_or_patch_config_map(
 
                 tracing::debug!("Updating ConfigMap '{}'", name);
                 configmap_api
-                    .patch(name, patch_params, &Patch::Apply(&updated_cm))
+                    .patch(
+                        name,
+                        patch_params,
+                        &Patch::Merge(json!({
+                            "data": updated_cm.data,
+                            "binaryData": updated_cm.binary_data
+                        })),
+                    )
                     .await?;
                 tracing::info!("Updated ConfigMap '{}'", name);
             }
