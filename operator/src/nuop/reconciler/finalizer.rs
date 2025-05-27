@@ -13,7 +13,7 @@ pub fn detect_phase<'a>(obj: &DynamicObject, finalizer: Option<&'a str>) -> Reco
                 .metadata
                 .finalizers
                 .as_ref()
-                .map_or(false, |fs| fs.contains(&f.to_string()));
+                .is_some_and(|fs| fs.contains(&f.to_string()));
             let deleting = obj.metadata.deletion_timestamp.is_some();
 
             match (deleting, has) {
