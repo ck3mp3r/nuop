@@ -15,7 +15,7 @@ spec:
       labelSelectors:
         app: foo-bar
   sources:
-    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts&ref=operators
+    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
       path: foo
       # credentials:
       #   username:
@@ -46,7 +46,7 @@ spec:
       labelSelectors:
         app: foo-baz
   sources:
-    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts&ref=operators
+    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
       path: foo
       # credentials:
       #   username:
