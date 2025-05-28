@@ -43,8 +43,8 @@ def fetch_source [config] {
       $repo = $"($parsed.scheme)://($username):($password)@($parsed.host)($parsed.path)"
     }
   }
-  let dir = $query.dir
-  let ref = $query.ref
+  let dir = ($query | get dir --ignore-errors | default "")
+  let ref = ($query | get ref --ignore-errors | default "")
 
   git clone $repo $tmp_dir
 
