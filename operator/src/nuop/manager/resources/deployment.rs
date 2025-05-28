@@ -253,7 +253,7 @@ pub fn generate_volumes_and_mounts(
                 .map(|s| s.name.clone());
 
             if let Some(secret_name) = secret_name {
-                let name = format!("nuop-secrets-{}", name);
+                let name = format!("{}-nuop-secret", name);
                 volumes.push(Volume {
                     name: name.to_string(),
                     secret: Some(SecretVolumeSource {
