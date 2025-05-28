@@ -1,4 +1,4 @@
-#!/usr/bin/env nu --stdin
+#!/usr/bin/nu --stdin
 
 # Finalizer identifier
 
