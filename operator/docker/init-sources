@@ -16,6 +16,10 @@ def fetch_source [config] {
   let credentials = ($config | get credentials --ignore-errors)
 
   let location = $config.location
+
+  let path = $"($SCRIPTS_PATH)/($config.path)"
+  mkdir $path
+
   let tmp_dir = mk_temp_dir
 
   let parsed = ($location | url parse)
@@ -51,7 +55,7 @@ def fetch_source [config] {
 
   let source_dir = if ($dir != "") { $tmp_dir + "/" + $dir } else { $tmp_dir }
 
-  cp -r $source_dir $SCRIPTS_PATH
+  cp -r $source_dir $path
 }
 
 def main [] {
