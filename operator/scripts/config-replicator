@@ -1,0 +1,154 @@
+#!/usr/bin/nu --stdin
+
+# Finalizer identifier
+
+const FINALIZER = "github.com/ck3mp3r-nuop-cfg-repktr-finalizer"
+# Returns operator config
+def 'main config' [] {
+  {
+    name: "config-replicator"
+    kind: "ConfigMap"
+    labelSelectors: {
+      "app.kubernetes.io/replicate": "yes"
+    }
+    finalizer: $FINALIZER
+    requeue_after_noop: 60
+    version: "v1"
+  } | to yaml
+}
+
+# Extracts only the relevant fields of a configmap for comparison
+def simplify-config [configpmap] {
+  let labels = ($configpmap.metadata.labels | default {})
+  let simplified_labels = if ($labels | columns | any {|c| $c == 'app.kubernetes.io/replicated-by' }) {
+    {"app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"}
+  } else {
+    {}
+  }
+
+  {
+    type: $configpmap.type
+    data: $configpmap.data
+    labels: $simplified_labels
+  }
+}
+
+# Builds the replicated configmap template
+def build-template [original] {
+  {
+    apiVersion: $original.apiVersion
+    kind: $original.kind
+    metadata: {
+      name: $original.metadata.name
+      labels: {
+        "app.kubernetes.io/managed-by": "github.com-ck3mp3r-nuop-cfg-repktr"
+        "app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"
+      }
+    }
+    type: $original.type
+    data: $original.data
+  }
+}
+
+# Deletes all replicated configpmaps in other namespaces
+def delete-replicated-configs [configmap_name, source_namespace] {
+  let namespaces = (
+    kubectl get namespaces -o json | from json
+  ).items
+  | get metadata.name
+  | where {|ns| $ns != $source_namespace }
+
+  for namespace in $namespaces {
+    let result = (kubectl get configmap $configmap_name -n $namespace -o yaml | complete)
+    if $result.exit_code == 0 {
+      print $"❌ Deleting replicated configmap in ($namespace)"
+      kubectl delete configmap $configmap_name -n $namespace | complete | ignore
+    }
+  }
+}
+
+# Reconciliation logic for create/update events
+def handle-reconcile [parsed] {
+  mut changed = false
+
+  let source_namespace = $parsed.metadata.namespace
+  let configmap_name = $parsed.metadata.name
+
+  let original_result = (kubectl get configmap $configmap_name -n $source_namespace -o yaml | complete)
+  if $original_result.exit_code != 0 {
+    print $"⚠️ Source configmap ($configmap_name) in ($source_namespace) not found — skipping reconcile"
+    exit 0
+  }
+
+  let original = $original_result.stdout | from yaml
+
+  let template = build-template $original
+  let source_simplified = simplify-config $template
+
+  let namespaces = (
+    kubectl get namespaces -o json | from json
+  ).items
+  | get metadata.name
+  | where {|ns| $ns != $source_namespace }
+
+  for namespace in $namespaces {
+    print $"🔍 Checking namespace: ($namespace)"
+
+    let result = (kubectl get configmap $configmap_name -n $namespace -o yaml | complete)
+    let existing_configmap = if $result.exit_code == 0 {
+      $result.stdout | from yaml
+    } else {
+      null
+    }
+
+    let existing_simplified = if $existing_configmap != null {
+      simplify-config $existing_configmap
+    } else {
+      null
+    }
+
+    if $existing_simplified == null {
+      print $"➕ Creating configpmap in ($namespace)"
+      ($template | to yaml) | kubectl apply -n $namespace -f -
+      $changed = true
+    } else if $existing_simplified != $source_simplified {
+      print $"🔄 Updating configpmap in ($namespace)"
+      ($template | to yaml) | kubectl apply -n $namespace -f -
+      $changed = true
+    } else {
+      print $"✅ configpmap in ($namespace) is up to date"
+    }
+  }
+
+  if $changed {
+    exit 2
+  } else {
+    exit 0
+  }
+}
+
+# Handles deletion of the source configpmap by cleaning up replicas and removing the finalizer
+def handle-deleted [parsed] {
+  let source_namespace = $parsed.metadata.namespace
+  let configmap_name = $parsed.metadata.name
+
+  print "🗑 Detected source configmap deletion. Cleaning up replicas..."
+  delete-replicated-configs $configmap_name $source_namespace
+
+  exit 0
+}
+
+# Main dispatch logic
+def 'main reconcile' [] {
+  let parsed = $in | from yaml
+  handle-reconcile $parsed
+}
+
+def 'main finalize' [] {
+  let parsed = $in | from yaml
+  handle-deleted $parsed
+}
+
+def main [] {
+  help main
+}
