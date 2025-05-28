@@ -7,7 +7,7 @@ tests:
 
 build:
 	docker build --debug -f docker/Dockerfile . -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) 
-	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n k8s-playground
+	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n nuop 
 	
 buildx:
 	docker buildx create --name mybuilder --use || true
