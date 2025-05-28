@@ -31,9 +31,19 @@ category = "kubeops"
 [[commands]]
 name = "kind-start"
 command = '''
-  COLIMA_IP=$(colima ls --json | jq -r '.address')
-  kind create cluster --config=$PRJ_ROOT/kind/kind-cluster.yaml --name=nuop
-  echo "The cluster IP is: ${COLIMA_IP}"
+#!/usr/bin/env nu
+
+if (kind get clusters | find "nuop" | is-empty) {
+  kind create cluster --name nuop --config ./kind/kind-cluster.yaml
+  kind get kubeconfig -n nuop
+  | from yaml
+  | reject clusters.0.cluster.certificate-authority-data
+  | upsert clusters.0.cluster.insecure-skip-tls-verify true
+  | upsert clusters.0.cluster.server https://127.0.0.1:7543
+  | to yaml
+  | save -f ./kind/kube.config
+  kubectx kind-nuop
+}
 '''
 category = "kubeops"
 help = "Start kind cluster"
@@ -88,7 +98,7 @@ category = "operator"
 
 [[commands]]
 name = "op-run-managed"
-command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH=$PRJ_ROOT/tmp/examples/mappings NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
+command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH=$PRJ_ROOT/operator/test/mappings NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
 help = "Run managed mode operator"
 category = "operator"
 [git.hooks]
