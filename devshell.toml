@@ -29,6 +29,9 @@ package = "tilt"
 category = "kubeops"
 
 [[commands]]
+package = "cargo-tarpaulin"
+
+[[commands]]
 name = "kind-start"
 command = '''
 #!/usr/bin/env nu
