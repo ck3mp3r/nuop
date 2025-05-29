@@ -9,3 +9,6 @@ pub use model::Mapping;
 pub use model::NuOperator;
 pub use model::Source;
 use state::State;
+
+#[cfg(test)]
+mod controller_tests;
