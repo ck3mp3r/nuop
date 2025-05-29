@@ -1,11 +1,73 @@
-use std::collections::BTreeMap;
-
 use k8s_openapi::api::core::v1::EnvVar;
 
 use crate::nuop::{
-    manager::resources::{deployment::DeploymentMeta, generate_deployment},
+    manager::resources::{
+        deployment::{DeploymentMeta, has_drifted},
+        generate_deployment,
+    },
     util::{NUOP_MODE, NuopMode},
 };
+
+use std::collections::BTreeMap;
+
+#[test]
+fn test_has_drifted() {
+    use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
+    use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+    use std::collections::BTreeMap;
+
+    let existing = Deployment {
+        metadata: ObjectMeta {
+            name: Some("test-deployment".to_string()),
+            annotations: Some(BTreeMap::from([(
+                "nuop.hash".to_string(),
+                "12345".to_string(),
+            )])),
+            ..Default::default()
+        },
+        spec: Some(DeploymentSpec {
+            replicas: Some(1),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let desired = Deployment {
+        metadata: ObjectMeta {
+            name: Some("test-deployment".to_string()),
+            annotations: Some(BTreeMap::from([(
+                "nuop.hash".to_string(),
+                "67890".to_string(),
+            )])),
+            ..Default::default()
+        },
+        spec: Some(DeploymentSpec {
+            replicas: Some(2),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    assert!(has_drifted(&existing, &desired));
+
+    let identical = Deployment {
+        metadata: ObjectMeta {
+            name: Some("test-deployment".to_string()),
+            annotations: Some(BTreeMap::from([(
+                "nuop.hash".to_string(),
+                "12345".to_string(),
+            )])),
+            ..Default::default()
+        },
+        spec: Some(DeploymentSpec {
+            replicas: Some(1),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    assert!(!has_drifted(&existing, &identical));
+}
 
 #[test]
 fn test_generate_deployment() {
