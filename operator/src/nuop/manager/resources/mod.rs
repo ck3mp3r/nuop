@@ -7,3 +7,6 @@ pub(crate) use config_map::generate_mapping_configmap;
 pub(crate) use config_map::generate_source_configmap;
 pub(crate) use deployment::create_or_patch_deployment;
 pub(crate) use deployment::generate_deployment;
+
+#[cfg(test)]
+mod config_map_tests;
