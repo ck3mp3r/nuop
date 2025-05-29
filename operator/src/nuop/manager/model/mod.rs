@@ -5,3 +5,6 @@ mod source;
 pub use mapping::Mapping;
 pub use nu_operator::NuOperator;
 pub use source::Source;
+
+#[cfg(test)]
+pub use nu_operator::NuOperatorSpec;
