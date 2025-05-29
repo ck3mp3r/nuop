@@ -1,21 +1,101 @@
-use k8s_openapi::api::core::v1::EnvVar;
-
 use crate::nuop::{
     manager::resources::{
+        create_or_patch_deployment,
         deployment::{DeploymentMeta, has_drifted},
         generate_deployment,
     },
     util::{NUOP_MODE, NuopMode},
 };
 
+use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
+use k8s_openapi::api::core::v1::EnvVar;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use kube::api::Api;
+use kube::{Client, client::Body};
 use std::collections::BTreeMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tower_test::mock::pair;
+
+#[tokio::test]
+async fn test_create_or_patch_deployment() {
+    let (mock_svc, handle) = pair::<http::Request<Body>, http::Response<Body>>();
+    let handle = Arc::new(Mutex::new(handle));
+    let client = Client::new(mock_svc, "default");
+
+    tokio::spawn(async move {
+        let mut handle = handle.lock().await;
+
+        let (_, send_response) = handle.next_request().await.unwrap();
+        let error_response = serde_json::json!({
+            "kind": "Status",
+            "apiVersion": "v1",
+            "metadata": {},
+            "status": "Failure",
+            "message": "deployments \"test-deployment\" not found",
+            "reason": "NotFound",
+            "details": {
+                "name": "test-deployment",
+                "kind": "deployments"
+            },
+            "code": 404
+        });
+        send_response.send_response(
+            http::Response::builder()
+                .status(404)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&error_response).unwrap()))
+                .unwrap(),
+        );
+
+        let (_, send_response) = handle.next_request().await.unwrap();
+        let created_deployment = serde_json::json!({
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "name": "test-deployment",
+                "namespace": "test-namespace",
+                "resourceVersion": "1"
+            },
+            "spec": {
+                "replicas": 1
+            }
+        });
+        send_response.send_response(
+            http::Response::builder()
+                .status(201)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&created_deployment).unwrap()))
+                .unwrap(),
+        );
+    });
+
+    let deployment_api: Api<Deployment> = Api::namespaced(client.clone(), "test-namespace");
+
+    let desired_deployment = Deployment {
+        metadata: ObjectMeta {
+            name: Some("test-deployment".to_string()),
+            namespace: Some("test-namespace".to_string()),
+            annotations: Some(BTreeMap::from([(
+                "nuop.hash".to_string(),
+                "12345".to_string(),
+            )])),
+            ..Default::default()
+        },
+        spec: Some(DeploymentSpec {
+            replicas: Some(1),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let result = create_or_patch_deployment(&deployment_api, &desired_deployment).await;
+
+    assert!(result.is_ok());
+}
 
 #[test]
 fn test_has_drifted() {
-    use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec};
-    use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-    use std::collections::BTreeMap;
-
     let existing = Deployment {
         metadata: ObjectMeta {
             name: Some("test-deployment".to_string()),
