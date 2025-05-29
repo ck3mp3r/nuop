@@ -52,6 +52,12 @@ category = "kubeops"
 help = "Start kind cluster"
 
 [[commands]]
+name = "op-coverage"
+command = "cd $PRJ_ROOT/operator && make coverage"
+category = "operator"
+help = "generate code coverage"
+
+[[commands]]
 name = "op-clean"
 command = "cd $PRJ_ROOT/operator && make clean"
 category = "operator"

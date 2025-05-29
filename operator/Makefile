@@ -25,3 +25,6 @@ fmt:
 
 crds:
 	cargo run --bin generate operator/ > chart/crds/nuop.yaml
+
+coverage:
+	cargo tarpaulin --out Html
