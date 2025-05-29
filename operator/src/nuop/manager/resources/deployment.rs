@@ -13,9 +13,13 @@ use k8s_openapi::{
     },
     apimachinery::pkg::apis::meta::v1::{LabelSelector, OwnerReference},
 };
-use kube::api::ObjectMeta;
+use kube::ResourceExt;
+use kube::{
+    Api,
+    api::{ObjectMeta, Patch, PatchParams, PostParams},
+};
 use std::{collections::BTreeMap, iter::once};
-use tracing::debug;
+use tracing::{debug, info};
 
 pub(crate) struct DeploymentMeta<'a> {
     pub(crate) name: &'a str,
@@ -275,4 +279,41 @@ pub fn generate_volumes_and_mounts(
     }
 
     (volumes, mounts)
+}
+
+pub(crate) async fn create_or_patch_deployment(
+    deployment_api: &Api<Deployment>,
+    deployment: &Deployment,
+) -> Result<(), kube::Error> {
+    let deployment_name = &deployment.name_any();
+    match deployment_api.get_opt(&deployment.name_any()).await? {
+        Some(existing) => {
+            if has_drifted(&existing, &deployment.clone()) {
+                info!("Deployment {} has drifted. Patching...", deployment_name);
+
+                let patch = Patch::Merge(serde_json::json!({
+                    "metadata": {
+                        "annotations": deployment.metadata.annotations
+                    },
+                    "spec": deployment.spec
+                }));
+                deployment_api
+                    .patch(
+                        &deployment_name.clone(),
+                        &PatchParams::apply("nureconciler"),
+                        &patch,
+                    )
+                    .await?;
+            } else {
+                info!("Deployment {} is already up-to-date.", deployment_name);
+            }
+        }
+        _ => {
+            info!("Deployment {} is missing. Creating...", deployment_name);
+            deployment_api
+                .create(&PostParams::default(), &deployment.clone())
+                .await?;
+        }
+    }
+    Ok(())
 }

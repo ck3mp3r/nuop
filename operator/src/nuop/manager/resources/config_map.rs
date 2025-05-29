@@ -1,64 +1,26 @@
 use kube::api::{Patch, PatchParams, PostParams};
 use kube::{Api, Resource};
 use serde_json::json;
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 use k8s_openapi::{api::core::v1::ConfigMap, apimachinery::pkg::apis::meta::v1::OwnerReference};
 use kube::api::ObjectMeta;
 
-use crate::nuop::manager::model::{Mapping, NuOperator, Source};
+use crate::nuop::manager::model::{Mapping, Source};
 
 pub(crate) const NUOP_SOURCES_CONFIG: &str = "nuop-sources-config";
 pub(crate) const NUOP_MAPPING_CONFIG: &str = "nuop-mapping-config";
 
-pub(crate) async fn manage_config_maps(
-    configmap_api: &Api<ConfigMap>,
-    deployment_name: &str,
-    namespace: &str,
-    owner_ref: &Option<OwnerReference>,
-    sources: &[Source],
-    mappings: &[Mapping],
-) -> Result<String, kube::Error> {
-    let patch_params = PatchParams::apply(&field_manager::<NuOperator>());
-    let mut hasher = Sha256::new();
-
-    if !mappings.is_empty() {
-        let mapping_cm =
-            generate_mapping_configmap(deployment_name, mappings, namespace, owner_ref.clone());
-        create_or_patch_config_map(&mapping_cm, configmap_api, &patch_params).await?;
-
-        if let Some(data) = &mapping_cm.data {
-            for (key, value) in data {
-                hasher.update(key);
-                hasher.update(value);
-            }
-        }
-    }
-
-    if !sources.is_empty() {
-        let source_cm =
-            generate_source_configmap(deployment_name, sources, namespace, owner_ref.clone());
-        create_or_patch_config_map(&source_cm, configmap_api, &patch_params).await?;
-
-        if let Some(data) = &source_cm.data {
-            for (key, value) in data {
-                hasher.update(key);
-                hasher.update(value);
-            }
-        }
-    }
-
-    let hash = format!("{:x}", hasher.finalize());
-    Ok(hash)
-}
-
 pub(crate) fn generate_mapping_configmap(
     deployment_name: &str,
-    mappings: &[Mapping],
     namespace: &str,
     owner_ref: Option<OwnerReference>,
-) -> ConfigMap {
+    mappings: &[Mapping],
+) -> Option<ConfigMap> {
+    if mappings.is_empty() {
+        return None;
+    }
+
     let mut combined_data = BTreeMap::new();
 
     for mapping in mappings {
@@ -83,19 +45,22 @@ pub(crate) fn generate_mapping_configmap(
         metadata.owner_references = Some(vec![owner.clone()]);
     }
 
-    ConfigMap {
+    Some(ConfigMap {
         metadata,
         data: Some(combined_data),
         ..Default::default()
-    }
+    })
 }
 
 pub(crate) fn generate_source_configmap(
     deployment_name: &str,
-    sources: &[Source],
     namespace: &str,
     owner_ref: Option<OwnerReference>,
-) -> ConfigMap {
+    sources: &[Source],
+) -> Option<ConfigMap> {
+    if sources.is_empty() {
+        return None;
+    }
     let mut combined_data = BTreeMap::new();
 
     for source in sources {
@@ -120,16 +85,16 @@ pub(crate) fn generate_source_configmap(
         metadata.owner_references = Some(vec![owner.clone()]);
     }
 
-    ConfigMap {
+    Some(ConfigMap {
         metadata,
         data: Some(combined_data),
         ..Default::default()
-    }
+    })
 }
 
-async fn create_or_patch_config_map(
-    desired_cm: &ConfigMap,
+pub(crate) async fn create_or_patch_config_map(
     configmap_api: &Api<ConfigMap>,
+    desired_cm: &ConfigMap,
     patch_params: &PatchParams,
 ) -> Result<(), kube::Error> {
     let name = desired_cm
@@ -177,6 +142,6 @@ async fn create_or_patch_config_map(
     Ok(())
 }
 
-pub fn field_manager<T: Resource<DynamicType = ()>>() -> String {
+pub(crate) fn field_manager<T: Resource<DynamicType = ()>>() -> String {
     format!("{}.{}", T::kind(&()), T::api_version(&()))
 }
