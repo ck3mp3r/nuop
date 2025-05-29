@@ -10,3 +10,6 @@ pub(crate) use deployment::generate_deployment;
 
 #[cfg(test)]
 mod config_map_tests;
+
+#[cfg(test)]
+mod deployment_tests;

@@ -21,6 +21,7 @@ use kube::{
 use std::{collections::BTreeMap, iter::once};
 use tracing::{debug, info};
 
+#[derive(Clone)]
 pub(crate) struct DeploymentMeta<'a> {
     pub(crate) name: &'a str,
     pub(crate) namespace: &'a str,
