@@ -40,10 +40,10 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
         .unwrap_or_else(|| DEFAULT_IMAGE.to_string());
 
     let sha = manage_config_maps(
+        &configmap_api,
         &deployment_name,
         &namespace,
         &owner_ref,
-        &configmap_api,
         &sources,
         &mappings,
     )

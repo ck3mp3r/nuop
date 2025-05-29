@@ -13,10 +13,10 @@ pub(crate) const NUOP_SOURCES_CONFIG: &str = "nuop-sources-config";
 pub(crate) const NUOP_MAPPING_CONFIG: &str = "nuop-mapping-config";
 
 pub(crate) async fn manage_config_maps(
+    configmap_api: &Api<ConfigMap>,
     deployment_name: &str,
     namespace: &str,
     owner_ref: &Option<OwnerReference>,
-    configmap_api: &Api<ConfigMap>,
     sources: &[Source],
     mappings: &[Mapping],
 ) -> Result<String, kube::Error> {
