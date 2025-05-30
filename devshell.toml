@@ -85,6 +85,12 @@ help = "Run cargo tests"
 category = "operator"
 
 [[commands]]
+name = "act-test"
+command = "make act-test"
+help = "Run github test workflow"
+category = "github"
+
+[[commands]]
 name = "op-clippy"
 command = "make clippy"
 help = "Run clippy"
@@ -117,4 +123,4 @@ category = "operator"
 enable = true
 
 [git.hooks.pre-push]
-text = "op-tests"
+text = "act-test"

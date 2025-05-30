@@ -1,4 +1,4 @@
-#!/usr/bin/env nu --stdin
+#!/usr/bin/nu --stdin
 
 # Get configuration for the test controller
 def 'main config' [] {

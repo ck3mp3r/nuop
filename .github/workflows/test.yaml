@@ -25,6 +25,10 @@ jobs:
 
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/flake-checker-action@main
-
       - run: |
-          nix develop --command op-tests
+          nix profile install nixpkgs#nushell
+          sudo ln -s $(which nu) /usr/bin/nu
+
+      - name: run tests
+        run: |
+          nix develop --command cargo test --manifest-path operator/Cargo.toml
