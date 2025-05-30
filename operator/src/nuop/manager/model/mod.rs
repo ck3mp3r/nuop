@@ -8,3 +8,5 @@ pub use source::Source;
 
 #[cfg(test)]
 pub use nu_operator::NuOperatorSpec;
+#[cfg(test)]
+pub use source::Credentials;
