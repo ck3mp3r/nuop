@@ -12,7 +12,6 @@ use kube::{
     Client, Error,
 };
 use serde_json::json;
-use tempfile::NamedTempFile;
 use tower_test::mock;
 
 use super::{
@@ -76,31 +75,8 @@ fn create_test_object(name: &str, namespace: &str, has_finalizer: bool, deleting
     obj
 }
 
-fn create_test_script(_content: &str, exit_code: i32) -> NamedTempFile {
-    use std::io::Write;
-    
-    let mut script_file = NamedTempFile::new().unwrap();
-    writeln!(
-        script_file,
-        r#"#!/bin/bash
-# Read stdin (ignore for test)
-cat > /dev/null
-# Output to stdout/stderr as needed
-echo "Script executed with command: $1"
-exit {}"#,
-        exit_code
-    ).unwrap();
-    
-    // Make executable
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = script_file.as_file().metadata().unwrap().permissions();
-        perms.set_mode(0o755);
-        script_file.as_file().set_permissions(perms).unwrap();
-    }
-    
-    script_file
+fn get_test_script_path(script_name: &str) -> PathBuf {
+    PathBuf::from(format!("src/nuop/reconciler/controller_tests/scripts/{}.nu", script_name))
 }
 
 #[tokio::test]
@@ -109,13 +85,13 @@ async fn test_reconcile_needs_finalizer() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 0);
+    let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", false, false));
@@ -149,13 +125,13 @@ async fn test_reconcile_active_no_changes() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 0); // Exit code 0 = no changes
+    let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", true, false));
@@ -170,13 +146,13 @@ async fn test_reconcile_active_with_changes() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 2); // Exit code 2 = changes detected
+    let script = get_test_script_path("success-with-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", true, false));
@@ -191,13 +167,13 @@ async fn test_reconcile_finalizing() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 0); // Finalize script succeeds
+    let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", true, true));
@@ -231,13 +207,13 @@ async fn test_reconcile_script_error() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 1); // Exit code 1 = error
+    let script = get_test_script_path("error");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", true, false));
@@ -260,13 +236,13 @@ async fn test_reconcile_no_finalizer_config() {
     
     let mut config = create_test_config();
     config.finalizer = None; // No finalizer configured
-    let script = create_test_script("", 0);
+    let script = get_test_script_path("no-finalizer");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", false, false));
@@ -281,13 +257,13 @@ async fn test_error_policy() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 0);
+    let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", true, false));
@@ -328,13 +304,13 @@ async fn test_api_error_handling() {
     let client = Client::new(mock_service, "default");
     
     let config = create_test_config();
-    let script = create_test_script("", 0);
+    let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
     let state = Arc::new(State::new(
         api_resource.clone(),
         client,
         config.clone(),
-        script.path().to_path_buf(),
+        script,
     ));
     
     let obj = Arc::new(create_test_object("test-deployment", "default", false, false));
@@ -373,13 +349,13 @@ async fn test_comprehensive_reconcile_scenarios() {
         let client = Client::new(mock_service, "default");
         
         let config = create_test_config();
-        let script = create_test_script("", 0);
+        let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         // Object already has the correct finalizer
@@ -426,13 +402,13 @@ async fn test_comprehensive_reconcile_scenarios() {
         config.group = "".to_string(); // Core API group
         config.kind = "ConfigMap".to_string();
         
-        let script = create_test_script("", 0);
+        let script = get_test_script_path("configmap");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let mut obj = DynamicObject::new("test-configmap", &ApiResource::from_gvk(&GroupVersionKind {
@@ -492,13 +468,13 @@ async fn test_api_failure_scenarios() {
         let client = Client::new(mock_service, "default");
         
         let config = create_test_config();
-        let script = create_test_script("", 0);
+        let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "default", false, false));
@@ -539,13 +515,13 @@ async fn test_api_failure_scenarios() {
         let client = Client::new(mock_service, "default");
         
         let config = create_test_config();
-        let script = create_test_script("", 0); // Finalize script succeeds
+        let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "default", true, true));
@@ -589,13 +565,13 @@ async fn test_script_execution_edge_cases() {
         let client = Client::new(mock_service, "default");
         
         let config = create_test_config();
-        let script = create_test_script("", 42); // Unexpected exit code
+        let script = get_test_script_path("unexpected-exit-code");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "default", true, false));
@@ -616,13 +592,13 @@ async fn test_script_execution_edge_cases() {
         let client = Client::new(mock_service, "default");
         
         let config = create_test_config();
-        let script = create_test_script("", 1); // Finalize script fails
+        let script = get_test_script_path("error");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "default", true, true));
@@ -650,13 +626,13 @@ async fn test_configuration_variations() {
         config.namespace = None; // No namespace restriction
         config.finalizer = None; // No finalizer
         
-        let script = create_test_script("", 2); // Changes detected
+        let script = get_test_script_path("success-with-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "kube-system", false, false));
@@ -675,13 +651,13 @@ async fn test_configuration_variations() {
         config.requeue_after_noop = 600;
         config.finalizer = None;
         
-        let script = create_test_script("", 0); // No changes
+        let script = get_test_script_path("custom-requeue");
         let api_resource = ApiResource::from_gvk(&(&config).into());
         let state = Arc::new(State::new(
             api_resource.clone(),
             client,
             config.clone(),
-            script.path().to_path_buf(),
+            script,
         ));
         
         let obj = Arc::new(create_test_object("test-deployment", "default", false, false));
