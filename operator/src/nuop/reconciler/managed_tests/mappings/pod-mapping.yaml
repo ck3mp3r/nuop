@@ -1,0 +1,10 @@
+name: pod-script
+group: ""
+version: v1
+kind: Pod
+fieldSelectors:
+  spec.nodeName: node1
+labelSelectors:
+  app: test-app
+requeue_after_change: 30
+requeue_after_noop: 120
