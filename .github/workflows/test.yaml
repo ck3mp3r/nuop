@@ -26,4 +26,6 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/flake-checker-action@main
 
-      - run: nix develop --command op-tests
+      - run: |
+          nix profile install nixpkgs#nushell
+          nix develop --command op-tests
