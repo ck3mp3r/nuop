@@ -27,5 +27,4 @@ jobs:
       - uses: DeterminateSystems/flake-checker-action@main
 
       - run: |
-          nix profile install nixpkgs#nushell
           nix develop --command op-tests
