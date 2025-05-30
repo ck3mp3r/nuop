@@ -14,6 +14,9 @@ use tower_test::mock::pair;
 
 #[tokio::test]
 async fn test_error_policy_returns_requeue_action() {
+    let (mock_svc, _handle) = pair::<http::Request<Body>, http::Response<Body>>();
+    let client = Client::new(mock_svc, "default");
+
     let nuoperator = Arc::new(NuOperator {
         metadata: ObjectMeta {
             name: Some("test-nuoperator".to_string()),
@@ -23,7 +26,7 @@ async fn test_error_policy_returns_requeue_action() {
         spec: Default::default(),
     });
 
-    let ctx = Arc::new(State::new(Client::try_default().await.unwrap()));
+    let ctx = Arc::new(State::new(client));
     let error = KubeError::Api(ErrorResponse {
         status: "Failure".to_string(),
         message: "Test error".to_string(),
@@ -38,6 +41,9 @@ async fn test_error_policy_returns_requeue_action() {
 
 #[tokio::test]
 async fn test_error_policy_with_different_error_types() {
+    let (mock_svc, _handle) = pair::<http::Request<Body>, http::Response<Body>>();
+    let client = Client::new(mock_svc, "default");
+
     let nuoperator = Arc::new(NuOperator {
         metadata: ObjectMeta {
             name: Some("test-nuoperator".to_string()),
@@ -47,7 +53,7 @@ async fn test_error_policy_with_different_error_types() {
         spec: Default::default(),
     });
 
-    let ctx = Arc::new(State::new(Client::try_default().await.unwrap()));
+    let ctx = Arc::new(State::new(client));
 
     let api_error = KubeError::Api(ErrorResponse {
         status: "Failure".to_string(),
