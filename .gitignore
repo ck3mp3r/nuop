@@ -10,3 +10,5 @@ result
 kind/kube.config
 
 .DS_Store
+
+tarpaulin-*

@@ -15,6 +15,9 @@ export KUBECONFIG=$PRJ_ROOT/kind/kube.config
 package = "colima"
 
 [[commands]]
+package = "act"
+
+[[commands]]
 name = "helm"
 package = "kubernetes-helm"
 
@@ -27,6 +30,9 @@ package = "kubectl"
 [[commands]]
 package = "tilt"
 category = "kubeops"
+
+[[commands]]
+package = "cargo-tarpaulin"
 
 [[commands]]
 name = "kind-start"
@@ -49,60 +55,72 @@ category = "kubeops"
 help = "Start kind cluster"
 
 [[commands]]
+name = "op-coverage"
+command = "make coverage"
+category = "operator"
+help = "generate code coverage"
+
+[[commands]]
 name = "op-clean"
-command = "cd $PRJ_ROOT/operator && make clean"
+command = "make clean"
 category = "operator"
 help = "cargo clean"
 
 [[commands]]
 name = "op-crds"
-command = "cd $PRJ_ROOT/operator && make crds"
+command = "make crds"
 category = "operator"
 help = "Generate crds"
 
 [[commands]]
 name = "op-build"
-command = "cd $PRJ_ROOT/operator && make build"
+command = "make build"
 help = "build"
 category = "operator"
 
 [[commands]]
 name = "op-tests"
-command = "cd $PRJ_ROOT/operator && make tests"
+command = "make tests"
 help = "Run cargo tests"
 category = "operator"
 
 [[commands]]
+name = "act-test"
+command = "make act-test"
+help = "Run github test workflow"
+category = "github"
+
+[[commands]]
 name = "op-clippy"
-command = "cd $PRJ_ROOT/operator && make clippy"
+command = "make clippy"
 help = "Run clippy"
 category = "operator"
 
 [[commands]]
 name = "op-fmt"
-command = "cd $PRJ_ROOT/operator && make fmt"
+command = "make fmt"
 help = "Run cargo format"
 category = "operator"
 
 [[commands]]
 name = "op-run-manager"
-command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=manager cargo run --bin operator"
+command = "LOG_LEVEL=debug NUOP_MODE=manager cargo run --bin operator"
 help = "run operator as manager"
 category = "operator"
 
 [[commands]]
 name = "op-run-standard"
-command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
+command = "LOG_LEVEL=debug NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
 help = "Run standard mode operator"
 category = "operator"
 
 [[commands]]
 name = "op-run-managed"
-command = "cd $PRJ_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH=$PRJ_ROOT/operator/test/mappings NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
+command = "LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH=$PRJ_ROOT/operator/test/mappings NUOP_SCRIPT_PATH=$PRJ_ROOT/operator/scripts cargo run --bin operator"
 help = "Run managed mode operator"
 category = "operator"
 [git.hooks]
 enable = true
 
 [git.hooks.pre-push]
-text = "op-tests"
+text = "act-test"

@@ -1,0 +1,6 @@
+name: service-script
+group: ""
+version: v1
+kind: Service
+fieldSelectors: {}
+labelSelectors: {}

@@ -1,0 +1,7 @@
+name: deployment-script
+group: apps
+version: v1
+kind: Deployment
+labelSelectors:
+  tier: backend
+requeue_after_change: 60
