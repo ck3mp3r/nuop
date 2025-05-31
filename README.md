@@ -1,5 +1,8 @@
-# nuop
-Nushell Operator
+# Nushell Operator
+
+⚠️ **Work in Progress** ⚠️
+
+This project is currently under active development and is not yet ready for production use. Breaking changes may occur frequently as we iterate on the design and implementation. Please use with caution and expect the API and functionality to evolve significantly.
 
 ## Overview
 
