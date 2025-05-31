@@ -1,0 +1,56 @@
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: namespace-manager
+  namespace: admin-tools
+spec:
+  serviceAccountName: namespace-manager-sa
+  env:
+    - name: RUST_LOG
+      value: warn
+    - name: OPERATOR_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: MEMORY_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          resource: limits.memory
+  mappings:
+    - name: namespace-provisioner
+      version: v1
+      kind: Namespace
+      labelSelectors:
+        auto-provision: "true"
+      requeue_after_change: 60
+      requeue_after_noop: 1800
+  sources:
+    - location: https://gitlab.company.com/devops/k8s-scripts.git?ref=stable
+      path: /namespace-management
+      credentials:
+        username:
+          name: gitlab-auth
+          key: username
+        password:
+          name: gitlab-auth
+          key: token
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: namespace-manager-sa
+  namespace: admin-tools
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-auth
+  namespace: admin-tools
+type: Opaque
+stringData:
+  username: devops-bot
+  token: glpat-xxxxxxxxxxxxxxxxxxxx

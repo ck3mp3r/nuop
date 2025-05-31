@@ -1,0 +1,12 @@
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: minimal-operator
+  namespace: default
+spec:
+  mappings:
+    - version: v1
+      kind: ConfigMap
+  sources:
+    - location: https://github.com/example/minimal-scripts.git
+      path: /scripts

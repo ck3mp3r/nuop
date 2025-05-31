@@ -1,0 +1,50 @@
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: custom-resource-operator
+  namespace: operators
+spec:
+  serviceAccountName: crd-operator-sa
+  env:
+    - name: RUST_LOG
+      value: info
+  mappings:
+    - name: database-backup
+      group: postgresql.cnpg.io
+      version: v1
+      kind: Cluster
+      labelSelectors:
+        backup-enabled: "true"
+      requeue_after_change: 900
+      requeue_after_noop: 3600
+    - name: certificate-manager
+      group: cert-manager.io
+      version: v1
+      kind: Certificate
+      labelSelectors:
+        auto-renew: "true"
+      requeue_after_change: 1800
+  sources:
+    - location: https://github.com/company/crd-operators.git?dir=postgresql
+      path: /postgresql-scripts
+    - location: https://github.com/company/crd-operators.git?dir=cert-manager
+      path: /cert-scripts
+      credentials:
+        token:
+          name: github-access-token
+          key: token
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crd-operator-sa
+  namespace: operators
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-access-token
+  namespace: operators
+type: Opaque
+stringData:
+  token: ghp_YYYYYYYYYYYYYYYYYYYYYYYYYYYY

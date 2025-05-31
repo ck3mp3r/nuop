@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-beta
+  namespace: default
+  labels:
+    app: foo-baz
+    environment: development
+data:
+  database_url: postgres://localhost:5432/mydb
+  api_endpoint: https://api.example.com
+  feature_flags: |
+    {
+      "new_ui": true,
+      "beta_features": false,
+      "debug_mode": true
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-gamma
+  namespace: production
+  labels:
+    app: production-app
+    monitor: enabled
+data:
+  log_level: warn
+  metrics_enabled: "true"
+  cache_ttl: "3600"
