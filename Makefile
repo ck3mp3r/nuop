@@ -10,9 +10,9 @@ build:
 	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n nuop 
 	
 buildx:
-	docker buildx create --name mybuilder --use || true
-	docker buildx inspect --bootstrap
-	docker buildx build -f ./operator/docker/Dockerfile --platform linux/amd64,linux/arm64 -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) --push ./operator
+	cd operator && docker buildx create --name mybuilder --use || true
+	cd operator && docker buildx inspect --bootstrap
+	cd operator && docker buildx build -f docker/Dockerfile --platform linux/amd64,linux/arm64 -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) --push .
 
 clean:
 	cd operator && cargo clean
@@ -38,3 +38,15 @@ act-test:
 		-P ubuntu-latest=catthehacker/ubuntu:js-latest \
 		-W .github/workflows/test.yaml \
 		-j test
+
+act-buildx:
+	@act workflow-dispatch \
+		--rm \
+		--container-architecture linux/aarch64 \
+		--privileged \
+		--container-daemon-socket /var/run/docker.sock \
+		-s GITHUB_TOKEN=${GITHUB_TOKEN} \
+		-s ACTIONS_RUNTIME_TOKEN=${GITHUB_TOKEN} \
+		-P ubuntu-latest=catthehacker/ubuntu:js-latest \
+		-W .github/workflows/buildx.yaml \
+		-j build
