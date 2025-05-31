@@ -1,0 +1,24 @@
+---
+repos:
+  - repo: local
+    hooks:
+      - id: alejandra
+        name: Format Nix files with local alejandra
+        entry: alejandra
+        language: system
+        types: [nix]
+      - id: cargo-fmt
+        name: Format Rust files with cargo fmt
+        entry: bash
+        language: system
+        types: [rust]
+        args: [-c, "cd operator && cargo fmt"]
+        pass_filenames: false
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.10.0
+    hooks:
+      - id: yamlfmt
+        name: Format YAML files with yamlfmt
+        args:
+          - --formatter=retain_line_breaks=true,include_document_start=true
+        exclude: ^(operator/src/nuop/reconciler/managed_tests/mappings/invalid-mapping\.yaml|operator/chart/crds/nuop\.yaml|kind/kind-cluster\.yaml)$
