@@ -1,3 +1,4 @@
+---
 apiVersion: kemper.buzz/v1alpha1
 kind: NuOperator
 metadata:
