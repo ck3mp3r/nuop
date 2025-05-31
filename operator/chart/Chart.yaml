@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: nuop
 description: A Helm chart for deploying the Nushell Operator
