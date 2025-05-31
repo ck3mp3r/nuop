@@ -38,7 +38,7 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
           else
-            echo "tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push Docker image
