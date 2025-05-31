@@ -12,7 +12,9 @@ let
       "aarch64-linux" = "aarch64-unknown-linux-musl";
       "x86_64-linux" = "x86_64-unknown-linux-musl";
     }
-    .${system};
+    .${
+      system
+    };
 in {
   inherit systemMap getTarget;
 }
