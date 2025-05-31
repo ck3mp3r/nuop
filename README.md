@@ -1,6 +1,10 @@
 # nuop
 Nushell Operator
 
+⚠️ **Work in Progress** ⚠️
+
+This project is currently under active development and is not yet ready for production use. Breaking changes may occur frequently as we iterate on the design and implementation. Please use with caution and expect the API and functionality to evolve significantly.
+
 ## Overview
 
 The Nushell Operator (nuop) is a Kubernetes operator that enables you to build custom controllers using [Nushell](https://www.nushell.sh/) scripts. Instead of writing controllers in traditional programming languages, you can define reconciliation logic using Nushell's powerful shell scripting capabilities.
