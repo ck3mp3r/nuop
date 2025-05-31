@@ -1,0 +1,103 @@
+---
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: multi-resource-operator
+  namespace: kube-system
+spec:
+  serviceAccountName: multi-resource-sa
+  image: ghcr.io/example/custom-nuop:v1.2.3
+  env:
+    - name: RUST_LOG
+      value: debug
+    - name: CLUSTER_NAME
+      valueFrom:
+        configMapKeyRef:
+          name: cluster-config
+          key: cluster-name
+    - name: SECRET_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: operator-secrets
+          key: api-token
+  mappings:
+    - name: deployment-monitor
+      version: v1
+      kind: Deployment
+      group: apps
+      labelSelectors:
+        monitor: "enabled"
+      fieldSelectors:
+        metadata.namespace: production
+      requeue_after_change: 300
+      requeue_after_noop: 600
+    - name: service-checker
+      version: v1
+      kind: Service
+      labelSelectors:
+        health-check: "required"
+      requeue_after_change: 120
+    - name: configmap-validator
+      version: v1
+      kind: ConfigMap
+      fieldSelectors:
+        metadata.namespace: production
+  sources:
+    - location: https://github.com/company/k8s-automation.git?ref=main&dir=operators/scripts
+      path: /automation
+      credentials:
+        username:
+          name: git-credentials
+          key: username
+        password:
+          name: git-credentials
+          key: password
+    - location: https://github.com/company/shared-scripts.git?ref=v2.1.0
+      path: /shared
+      credentials:
+        token:
+          name: github-token
+          key: token
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: multi-resource-sa
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config
+  namespace: kube-system
+data:
+  cluster-name: production-cluster
+  region: us-west-2
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: operator-secrets
+  namespace: kube-system
+type: Opaque
+stringData:
+  api-token: sk-1234567890abcdef
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-credentials
+  namespace: kube-system
+type: Opaque
+stringData:
+  username: automation-user
+  password: secure-password-123
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-token
+  namespace: kube-system
+type: Opaque
+stringData:
+  token: ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

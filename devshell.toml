@@ -1,7 +1,9 @@
 # https://numtide.github.io/devshell
 packages = [
+  "alejandra",
   "nushell",
   "helm-ls",
+  "pre-commit",
   "pyright",
   "black"
 ]
@@ -123,4 +125,7 @@ category = "operator"
 enable = true
 
 [git.hooks.pre-push]
-text = "act-test"
+text = """
+pre-commit run --all-files
+act-test
+"""

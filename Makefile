@@ -6,7 +6,7 @@ tests:
 	cd operator && cargo test
 
 build:
-	docker build --debug -f operator/docker/Dockerfile . -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) 
+	cd operator && docker build --debug -f docker/Dockerfile . -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) 
 	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n nuop 
 	
 buildx:

@@ -1,0 +1,27 @@
+---
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: local-development
+  namespace: dev
+spec:
+  # No serviceAccountName specified - will use default
+  env:
+    - name: RUST_LOG
+      value: trace
+    - name: DEV_MODE
+      value: "true"
+  mappings:
+    - name: dev-pod-helper
+      version: v1
+      kind: Pod
+      labelSelectors:
+        environment: development
+        owner: developer
+  sources:
+    # Local volume mount (mounted into container at /scripts/local)
+    - location: /scripts/local
+      path: /dev-scripts
+    # Git repository for development scripts
+    - location: https://github.com/example/dev-scripts.git?ref=dev
+      path: /custom-scripts
