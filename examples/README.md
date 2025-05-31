@@ -28,7 +28,7 @@ This directory contains various example configurations for the NuOperator CRD.
 ### Environment Variables
 - Static values
 - ConfigMap references (`configMapKeyRef`)
-- Secret references (`secretKeyRef`) 
+- Secret references (`secretKeyRef`)
 - Field references (`fieldRef`)
 - Resource field references (`resourceFieldRef`)
 
