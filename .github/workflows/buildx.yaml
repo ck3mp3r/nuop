@@ -35,11 +35,15 @@ jobs:
       - name: Generate tags
         id: tags
         run: |
+          VERSION=$(grep '^version = ' operator/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+            TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
           else
-            echo "tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}-$(git rev-parse --short HEAD)"
           fi
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
