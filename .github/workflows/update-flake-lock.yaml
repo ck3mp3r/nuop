@@ -4,6 +4,7 @@ on:
   workflow_dispatch: # allows manual triggering
   schedule:
     - cron: "0 0 * * 0" # runs weekly on Sunday at 00:00
+    - cron: "30 0 * * 0" # runs on Sunday at 00:30
 
 jobs:
   lockfile:
@@ -25,3 +26,4 @@ jobs:
         uses: ck3mp3r/actions/update-flake-lock@main
         with:
           github-token: ${{ steps.token.outputs.token }}
+          checks-required: "Test"
