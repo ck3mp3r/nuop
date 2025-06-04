@@ -6,6 +6,11 @@ metadata:
   namespace: default
   labels:
     app: foo-bar
+    app.kubernetes.io/replicate: "yes"
+  annotations:
+    app.kubernetes.io/target-namespaces: "foo,bar,baz"
+    # app.kubernetes.io/target-method: "exclude" # defaults to include
+
 data:
   key1: value1
   key2: value2

@@ -16,6 +16,14 @@ The Nushell Operator (nuop) is a Kubernetes operator that enables you to build c
 - **Environment Configuration**: Supply environment variables and credentials for your scripts
 - **Custom Requeue Logic**: Control when and how often reconciliation occurs
 
+## Documentation
+
+### [Examples](examples/README.md)
+Collection of example configurations showing various nuop deployment patterns and use cases. Demonstrates environment variables, source authentication, resource mappings, and different operator configurations.
+
+### [Example Scripts](operator/scripts/README.md)
+Sample Nushell operator scripts demonstrating patterns like ConfigMap replication and Secret cloning. These serve as working examples and starting points for building custom operators.
+
 ## Deployment Approach
 
 The Nushell Operator is designed with **Standard Mode** as the primary deployment approach, offering the most straightforward and efficient way to run script-based controllers.
