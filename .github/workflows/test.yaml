@@ -3,6 +3,14 @@ name: Test
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - flake.*
+      - devshell.toml
+      - operator/Cargo.*
+      - operator/flake.*
+      - operator/src/**
+      - .github/workflows/**
   pull_request:
     paths:
       - flake.*
@@ -13,7 +21,7 @@ on:
       - .github/workflows/**
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
