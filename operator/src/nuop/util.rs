@@ -31,7 +31,7 @@ impl Display for NuopMode {
             NuopMode::Managed => "managed",
             NuopMode::Standard => "standard",
         };
-        write!(f, "{}", mode_str)
+        write!(f, "{mode_str}")
     }
 }
 

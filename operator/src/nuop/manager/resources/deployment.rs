@@ -215,7 +215,7 @@ pub fn generate_volumes_and_mounts(
         volumes.push(Volume {
             name: "config-sources".to_string(),
             config_map: Some(ConfigMapVolumeSource {
-                name: format!("{}-{}", deployment_name, NUOP_SOURCES_CONFIG),
+                name: format!("{deployment_name}-{NUOP_SOURCES_CONFIG}"),
                 default_mode: Some(420),
                 ..Default::default()
             }),
@@ -233,7 +233,7 @@ pub fn generate_volumes_and_mounts(
         volumes.push(Volume {
             name: "config-mappings".to_string(),
             config_map: Some(ConfigMapVolumeSource {
-                name: format!("{}-{}", deployment_name, NUOP_MAPPING_CONFIG),
+                name: format!("{deployment_name}-{NUOP_MAPPING_CONFIG}"),
                 default_mode: Some(420),
                 ..Default::default()
             }),
@@ -258,7 +258,7 @@ pub fn generate_volumes_and_mounts(
                 .map(|s| s.name.clone());
 
             if let Some(secret_name) = secret_name {
-                let name = format!("{}-nuop-secret", name);
+                let name = format!("{name}-nuop-secret");
                 volumes.push(Volume {
                     name: name.to_string(),
                     secret: Some(SecretVolumeSource {

@@ -110,7 +110,7 @@ async fn run_delegate(
             )))
         }
         _ => Err(to_kube_error(
-            &format!("Exit code: {}", code),
+            &format!("Exit code: {code}"),
             "Script exited with error",
             code,
         )),

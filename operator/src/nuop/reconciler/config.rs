@@ -52,7 +52,7 @@ impl Config {
             Some(
                 self.label_selectors
                     .iter()
-                    .map(|(k, v)| format!("{}={}", k, v))
+                    .map(|(k, v)| format!("{k}={v}"))
                     .collect::<Vec<_>>()
                     .join(","),
             )
@@ -66,7 +66,7 @@ impl Config {
             Some(
                 self.field_selectors
                     .iter()
-                    .map(|(k, v)| format!("{}={}", k, v))
+                    .map(|(k, v)| format!("{k}={v}"))
                     .collect::<Vec<_>>()
                     .join(","),
             )

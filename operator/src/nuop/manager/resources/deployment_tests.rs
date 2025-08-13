@@ -785,7 +785,7 @@ fn test_generate_volumes_and_mounts() {
     let config_map_source = sources_volume.config_map.as_ref().unwrap();
     assert_eq!(
         config_map_source.name,
-        format!("{}-nuop-sources-config", deployment_name)
+        format!("{deployment_name}-nuop-sources-config")
     );
     assert_eq!(config_map_source.default_mode.unwrap(), 420);
 
@@ -800,7 +800,7 @@ fn test_generate_volumes_and_mounts() {
     let config_map_source = mappings_volume.config_map.as_ref().unwrap();
     assert_eq!(
         config_map_source.name,
-        format!("{}-nuop-mapping-config", deployment_name)
+        format!("{deployment_name}-nuop-mapping-config")
     );
 
     let mappings_mount = mounts.iter().find(|m| m.name == "config-mappings").unwrap();
