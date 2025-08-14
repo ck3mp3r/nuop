@@ -32,6 +32,7 @@ coverage:
 act-test:
 	@act push \
 		--rm \
+		--container-options "--network bridge --dns 8.8.8.8 --dns 1.1.1.1" \
 		--container-architecture linux/aarch64 \
 		-s GITHUB_TOKEN=${GITHUB_TOKEN} \
 		-s ACTIONS_RUNTIME_TOKEN=${GITHUB_TOKEN} \
