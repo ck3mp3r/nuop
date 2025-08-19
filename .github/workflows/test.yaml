@@ -56,6 +56,7 @@ jobs:
           local-root: /tmp
 
       - uses: DeterminateSystems/flake-checker-action@main
+
       - run: |
           nix profile install nixpkgs#nushell
           sudo ln -s $(which nu) /usr/bin/nu
