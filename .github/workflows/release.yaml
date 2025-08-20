@@ -153,7 +153,6 @@ jobs:
             - linux/amd64
             - linux/arm64
 
-            🤖 Generated with [Claude Code](https://claude.ai/code)
           draft: false
           prerelease: false
           target_commitish: ${{ env.RELEASE_BRANCH || github.ref }}
