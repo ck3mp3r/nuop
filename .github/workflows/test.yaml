@@ -11,18 +11,6 @@ on:
       - operator/flake.*
       - operator/src/**
       - .github/workflows/**
-  pull_request:
-    paths:
-      - flake.*
-      - devshell.toml
-      - operator/Cargo.*
-      - operator/flake.*
-      - operator/src/**
-      - .github/workflows/**
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
 
 jobs:
   test:
