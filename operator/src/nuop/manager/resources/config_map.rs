@@ -32,11 +32,11 @@ pub(crate) fn generate_mapping_configmap(
                 "".to_string()
             }
         };
-        combined_data.insert(format!("{}.yaml", name), yaml);
+        combined_data.insert(format!("{name}.yaml"), yaml);
     }
 
     let mut metadata = ObjectMeta {
-        name: Some(format!("{}-{}", deployment_name, NUOP_MAPPING_CONFIG)),
+        name: Some(format!("{deployment_name}-{NUOP_MAPPING_CONFIG}")),
         namespace: Some(namespace.to_string()),
         ..Default::default()
     };
@@ -72,11 +72,11 @@ pub(crate) fn generate_source_configmap(
                 "".to_string()
             }
         };
-        combined_data.insert(format!("{}.yaml", name), yaml);
+        combined_data.insert(format!("{name}.yaml"), yaml);
     }
 
     let mut metadata = ObjectMeta {
-        name: Some(format!("{}-{}", deployment_name, NUOP_SOURCES_CONFIG)),
+        name: Some(format!("{deployment_name}-{NUOP_SOURCES_CONFIG}")),
         namespace: Some(namespace.to_string()),
         ..Default::default()
     };

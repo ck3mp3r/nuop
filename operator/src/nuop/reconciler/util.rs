@@ -7,7 +7,7 @@ pub fn get_script_config(script: &PathBuf) -> Result<Config> {
     let output = Command::new(script)
         .arg("config")
         .output()
-        .with_context(|| format!("Failed to execute script: {:?}", script))?;
+        .with_context(|| format!("Failed to execute script: {script:?}"))?;
 
     if !output.status.success() {
         return Err(anyhow::anyhow!(

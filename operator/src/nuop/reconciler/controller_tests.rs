@@ -85,8 +85,7 @@ fn create_test_object(
 
 fn get_test_script_path(script_name: &str) -> PathBuf {
     PathBuf::from(format!(
-        "src/nuop/reconciler/controller_tests/scripts/{}.nu",
-        script_name
+        "src/nuop/reconciler/controller_tests/scripts/{script_name}.nu",
     ))
 }
 

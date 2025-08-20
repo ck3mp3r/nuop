@@ -22,7 +22,7 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
     let configmap_api: Api<ConfigMap> = Api::namespaced(client.clone(), &namespace);
     let owner_ref = obj.controller_owner_ref(&());
 
-    let deployment_name = format!("{}-nuop", name);
+    let deployment_name = format!("{name}-nuop");
 
     let env_vars = obj.spec.env.clone();
 
