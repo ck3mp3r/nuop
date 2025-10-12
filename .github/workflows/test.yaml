@@ -51,4 +51,4 @@ jobs:
 
       - name: run tests
         run: |
-          nix develop --command cargo test --manifest-path operator/Cargo.toml
+          nix develop --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
