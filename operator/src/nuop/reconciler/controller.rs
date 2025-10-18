@@ -14,7 +14,7 @@ use crate::nuop::util::to_kube_error;
 
 use super::config::{Config, ReconcilePhase};
 use super::finalizer::{add_finalizer, detect_phase, remove_finalizer};
-use super::state::{State, CommandExecutor};
+use super::state::{CommandExecutor, State};
 
 pub async fn reconcile<E>(obj: Arc<DynamicObject>, ctx: Arc<State<E>>) -> Result<Action, Error>
 where
@@ -108,7 +108,12 @@ pub async fn controller(client: Client, config: Config, script: PathBuf) {
         "Starting controller for config: {:?} and script: {:?}",
         &config, &script
     );
-    let context = Arc::new(State::new_default(api_resource.clone(), client, config, script));
+    let context = Arc::new(State::new_default(
+        api_resource.clone(),
+        client,
+        config,
+        script,
+    ));
 
     let watcher_config = WatcherConfig {
         label_selector: context.config.label_selectors(),

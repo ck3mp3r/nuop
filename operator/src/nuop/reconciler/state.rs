@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use async_trait::async_trait;
+use std::path::{Path, PathBuf};
 
 use kube::{Client, api::ApiResource};
 
@@ -8,7 +8,12 @@ use super::config::Config;
 // Command execution abstraction following DIP (Dependency Inversion Principle)
 #[async_trait]
 pub trait CommandExecutor: Clone + Send + Sync + 'static {
-    async fn execute(&self, script: &PathBuf, command: &str, input: &str) -> Result<CommandResult, anyhow::Error>;
+    async fn execute(
+        &self,
+        script: &Path,
+        command: &str,
+        input: &str,
+    ) -> Result<CommandResult, anyhow::Error>;
 }
 
 #[derive(Debug)]
@@ -24,12 +29,17 @@ pub struct ProcessExecutor;
 
 #[async_trait]
 impl CommandExecutor for ProcessExecutor {
-    async fn execute(&self, script: &PathBuf, command: &str, input: &str) -> Result<CommandResult, anyhow::Error> {
-        use std::process::{Command, Stdio};
+    async fn execute(
+        &self,
+        script: &Path,
+        command: &str,
+        input: &str,
+    ) -> Result<CommandResult, anyhow::Error> {
         use std::io::{BufRead, BufReader, Write};
+        use std::process::{Command, Stdio};
         use tokio::task;
 
-        let script = script.clone();
+        let script = script.to_path_buf();
         let command = command.to_string();
         let input = input.to_string();
 
@@ -47,9 +57,13 @@ impl CommandExecutor for ProcessExecutor {
                 drop(stdin);
             }
 
-            let stdout = child.stdout.take()
+            let stdout = child
+                .stdout
+                .take()
                 .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
-            let stderr = child.stderr.take()
+            let stderr = child
+                .stderr
+                .take()
                 .ok_or_else(|| anyhow::anyhow!("Failed to capture stderr"))?;
 
             let stdout_reader = BufReader::new(stdout);
@@ -74,7 +88,8 @@ impl CommandExecutor for ProcessExecutor {
                 stdout: stdout_lines.join("\n"),
                 stderr: stderr_lines.join("\n"),
             })
-        }).await?
+        })
+        .await?
     }
 }
 
@@ -95,7 +110,14 @@ impl<E> State<E>
 where
     E: CommandExecutor,
 {
-    pub fn new(api_resource: ApiResource, client: Client, config: Config, script: PathBuf, executor: E) -> Self {
+    #[allow(dead_code)] // Used for testing with custom executors
+    pub fn new(
+        api_resource: ApiResource,
+        client: Client,
+        config: Config,
+        script: PathBuf,
+        executor: E,
+    ) -> Self {
         State {
             api_resource,
             client,
@@ -108,13 +130,18 @@ where
 
 // Convenience constructor for default case (maintains backward compatibility)
 impl State<ProcessExecutor> {
-    pub fn new_default(api_resource: ApiResource, client: Client, config: Config, script: PathBuf) -> Self {
+    pub fn new_default(
+        api_resource: ApiResource,
+        client: Client,
+        config: Config,
+        script: PathBuf,
+    ) -> Self {
         State {
             api_resource,
             client,
             config,
             script,
-            executor: ProcessExecutor::default(),
+            executor: ProcessExecutor,
         }
     }
 }
