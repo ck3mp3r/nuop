@@ -495,7 +495,7 @@ async fn test_comprehensive_reconcile_scenarios() {
         assert!(result.is_err());
         if let Err(Error::Api(error_response)) = result {
             assert_eq!(error_response.code, 500);
-            assert_eq!(error_response.message, "Failed to spawn script");
+            assert_eq!(error_response.message, "Failed to execute script");
         } else {
             panic!("Expected API error for script spawn failure");
         }
