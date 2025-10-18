@@ -103,7 +103,7 @@ async fn test_reconcile_needs_finalizer() {
     let config = create_test_config();
     let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -157,7 +157,7 @@ async fn test_reconcile_active_no_changes() {
     let config = create_test_config();
     let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -187,7 +187,7 @@ async fn test_reconcile_active_with_changes() {
     let config = create_test_config();
     let script = get_test_script_path("success-with-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -217,7 +217,7 @@ async fn test_reconcile_finalizing() {
     let config = create_test_config();
     let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -266,7 +266,7 @@ async fn test_reconcile_script_error() {
     let config = create_test_config();
     let script = get_test_script_path("error");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -304,7 +304,7 @@ async fn test_reconcile_no_finalizer_config() {
     config.finalizer = None; // No finalizer configured
     let script = get_test_script_path("no-finalizer");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -330,7 +330,7 @@ async fn test_error_policy() {
     let config = create_test_config();
     let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -400,7 +400,7 @@ async fn test_api_error_handling() {
     let config = create_test_config();
     let script = get_test_script_path("success-no-changes");
     let api_resource = ApiResource::from_gvk(&(&config).into());
-    let state = Arc::new(State::new(
+    let state = Arc::new(State::new_default(
         api_resource.clone(),
         client,
         config.clone(),
@@ -454,7 +454,7 @@ async fn test_comprehensive_reconcile_scenarios() {
         let config = create_test_config();
         let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -477,7 +477,7 @@ async fn test_comprehensive_reconcile_scenarios() {
 
         let config = create_test_config();
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -495,7 +495,7 @@ async fn test_comprehensive_reconcile_scenarios() {
         assert!(result.is_err());
         if let Err(Error::Api(error_response)) = result {
             assert_eq!(error_response.code, 500);
-            assert_eq!(error_response.message, "Failed to spawn script");
+            assert_eq!(error_response.message, "Failed to execute script");
         } else {
             panic!("Expected API error for script spawn failure");
         }
@@ -512,7 +512,7 @@ async fn test_comprehensive_reconcile_scenarios() {
 
         let script = get_test_script_path("configmap");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -586,7 +586,7 @@ async fn test_api_failure_scenarios() {
         let config = create_test_config();
         let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -639,7 +639,7 @@ async fn test_api_failure_scenarios() {
         let config = create_test_config();
         let script = get_test_script_path("success-no-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -694,7 +694,7 @@ async fn test_script_execution_edge_cases() {
         let config = create_test_config();
         let script = get_test_script_path("unexpected-exit-code");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -726,7 +726,7 @@ async fn test_script_execution_edge_cases() {
         let config = create_test_config();
         let script = get_test_script_path("error");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -764,7 +764,7 @@ async fn test_configuration_variations() {
 
         let script = get_test_script_path("success-with-changes");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
@@ -794,7 +794,7 @@ async fn test_configuration_variations() {
 
         let script = get_test_script_path("custom-requeue");
         let api_resource = ApiResource::from_gvk(&(&config).into());
-        let state = Arc::new(State::new(
+        let state = Arc::new(State::new_default(
             api_resource.clone(),
             client,
             config.clone(),
