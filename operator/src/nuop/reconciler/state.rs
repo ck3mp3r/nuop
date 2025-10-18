@@ -1,24 +1,120 @@
 use std::path::PathBuf;
+use async_trait::async_trait;
 
 use kube::{Client, api::ApiResource};
 
 use super::config::Config;
 
+// Command execution abstraction following DIP (Dependency Inversion Principle)
+#[async_trait]
+pub trait CommandExecutor: Clone + Send + Sync + 'static {
+    async fn execute(&self, script: &PathBuf, command: &str, input: &str) -> Result<CommandResult, anyhow::Error>;
+}
+
+#[derive(Debug)]
+pub struct CommandResult {
+    pub exit_code: i32,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+// Default implementation using actual process execution
+#[derive(Clone, Debug, Default)]
+pub struct ProcessExecutor;
+
+#[async_trait]
+impl CommandExecutor for ProcessExecutor {
+    async fn execute(&self, script: &PathBuf, command: &str, input: &str) -> Result<CommandResult, anyhow::Error> {
+        use std::process::{Command, Stdio};
+        use std::io::{BufRead, BufReader, Write};
+        use tokio::task;
+
+        let script = script.clone();
+        let command = command.to_string();
+        let input = input.to_string();
+
+        task::spawn_blocking(move || {
+            let mut child = Command::new(&script)
+                .arg(&command)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()?;
+
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(input.as_bytes())?;
+                stdin.flush()?;
+                drop(stdin);
+            }
+
+            let stdout = child.stdout.take()
+                .ok_or_else(|| anyhow::anyhow!("Failed to capture stdout"))?;
+            let stderr = child.stderr.take()
+                .ok_or_else(|| anyhow::anyhow!("Failed to capture stderr"))?;
+
+            let stdout_reader = BufReader::new(stdout);
+            let stderr_reader = BufReader::new(stderr);
+
+            let mut stdout_lines = Vec::new();
+            let mut stderr_lines = Vec::new();
+
+            for line in stdout_reader.lines() {
+                stdout_lines.push(line?);
+            }
+
+            for line in stderr_reader.lines() {
+                stderr_lines.push(line?);
+            }
+
+            let status = child.wait()?;
+            let exit_code = status.code().unwrap_or(1);
+
+            Ok(CommandResult {
+                exit_code,
+                stdout: stdout_lines.join("\n"),
+                stderr: stderr_lines.join("\n"),
+            })
+        }).await?
+    }
+}
+
+// Zero-cost generic State with default executor (following guide pattern)
 #[derive(Clone)]
-pub struct State {
+pub struct State<E = ProcessExecutor>
+where
+    E: CommandExecutor,
+{
     pub api_resource: ApiResource,
     pub client: Client,
     pub config: Config,
     pub script: PathBuf,
+    pub executor: E,
 }
 
-impl State {
-    pub fn new(api_resource: ApiResource, client: Client, config: Config, script: PathBuf) -> Self {
+impl<E> State<E>
+where
+    E: CommandExecutor,
+{
+    pub fn new(api_resource: ApiResource, client: Client, config: Config, script: PathBuf, executor: E) -> Self {
         State {
             api_resource,
             client,
             config,
             script,
+            executor,
+        }
+    }
+}
+
+// Convenience constructor for default case (maintains backward compatibility)
+impl State<ProcessExecutor> {
+    pub fn new_default(api_resource: ApiResource, client: Client, config: Config, script: PathBuf) -> Self {
+        State {
+            api_resource,
+            client,
+            config,
+            script,
+            executor: ProcessExecutor::default(),
         }
     }
 }
