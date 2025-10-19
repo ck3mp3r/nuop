@@ -45,6 +45,8 @@ jobs:
 
       - uses: DeterminateSystems/flake-checker-action@main
 
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
       - run: |
           nix profile install nixpkgs#nushell
           sudo ln -s $(which nu) /usr/bin/nu
