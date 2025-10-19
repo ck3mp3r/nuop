@@ -70,7 +70,9 @@ async fn test_with_invalid_script_config() {
 
     let scripts = vec![
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu"), // Returns invalid config
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Returns invalid config
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"),
     ];
 
@@ -123,7 +125,9 @@ async fn test_mixed_valid_and_invalid_scripts() {
 
     let scripts = vec![
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu"), // Invalid config
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Invalid config
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Valid
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/nonexistent-controller/mod.nu"), // Doesn't exist
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // Valid
@@ -262,7 +266,9 @@ async fn test_error_resilience() {
     // Mix of valid scripts, invalid configs, and missing files
     let scripts = vec![
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu"), // Invalid config
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Invalid config
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/missing-file/mod.nu"), // Missing file
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Valid
         PathBuf::from("src/nuop/reconciler/standard_tests/scripts/another-missing/mod.nu"), // Another missing file
