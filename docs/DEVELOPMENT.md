@@ -121,4 +121,4 @@ operator/
 
 ## Contributing
 
-See [Contributing Guidelines](../CONTRIBUTING.md) for detailed information on code style, testing, and submitting pull requests.
+See [Contributing Guidelines](CONTRIBUTING.md) for detailed information on code style, testing, and submitting pull requests.

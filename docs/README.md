@@ -11,7 +11,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 
 ### For Developers  
 - **[Development Setup](DEVELOPMENT.md)** - Environment setup and workflow
-- **[Contributing](../CONTRIBUTING.md)** - Contribution guidelines and standards
+- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines and standards
 - **[Script Development](SCRIPT-DEVELOPMENT.md)** - Complete guide to writing operator scripts
 
 ## 📚 Reference Documentation
@@ -56,7 +56,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 
 ### Contributors
 1. Follow [Development Setup](DEVELOPMENT.md) for environment configuration
-2. Read [Contributing Guidelines](../CONTRIBUTING.md) for workflow and standards
+2. Read [Contributing Guidelines](CONTRIBUTING.md) for workflow and standards
 3. Reference [Script Development](SCRIPT-DEVELOPMENT.md) for implementation patterns
 
 ## 🔗 External Resources
@@ -72,7 +72,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 | [Development Setup](DEVELOPMENT.md) | ✅ Complete | Latest |
 | [Script Development](SCRIPT-DEVELOPMENT.md) | ✅ Complete | Latest |
 | [Troubleshooting](TROUBLESHOOTING.md) | ✅ Complete | Latest |
-| [Contributing](../CONTRIBUTING.md) | ✅ Complete | Latest |
+| [Contributing](CONTRIBUTING.md) | ✅ Complete | Latest |
 | [Architecture](ARCHITECTURE.md) | ✅ Complete | Latest |
 | [Deployment Guide](DEPLOYMENT.md) | ✅ Complete | Latest |
 | [API Reference](api/CRD.md) | ✅ Complete | Latest |

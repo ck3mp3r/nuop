@@ -38,4 +38,4 @@ See the [complete documentation](docs/README.md) for detailed deployment approac
 
 ## Contributing
 
-See our [Contributing Guide](CONTRIBUTING.md) for development setup and submission process.
+See our [Contributing Guide](docs/CONTRIBUTING.md) for development setup and submission process.
