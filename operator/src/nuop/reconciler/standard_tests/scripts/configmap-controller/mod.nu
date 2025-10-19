@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the configmap controller
 def 'main config' [] {

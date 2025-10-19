@@ -4,7 +4,8 @@ use std::{path::PathBuf, process::Command};
 use tracing::debug;
 
 pub fn get_script_config(script: &PathBuf) -> Result<Config> {
-    let output = Command::new(script)
+    let output = Command::new("nu")
+        .arg(script)
         .arg("config")
         .output()
         .with_context(|| format!("Failed to execute script: {script:?}"))?;

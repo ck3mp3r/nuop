@@ -1,12 +1,11 @@
-#!/usr/bin/nu --stdin
 
-# Get configuration for the test controller - ConfigMap
+# Get configuration for the test controller
 def 'main config' [] {
   {
     name: "test-controller"
-    group: ""
+    group: "apps"
     version: "v1"
-    kind: "ConfigMap"
+    kind: "Deployment"
     labelSelectors: {}
     fieldSelectors: {}
     finalizer: "test.example.com/finalizer"
@@ -18,23 +17,23 @@ def 'main config' [] {
 
 # Handle reconcile logic
 def handle-reconcile [parsed] {
-  print $"Reconciling ConfigMap: ($parsed.metadata.name)"
-  exit 0
+  print -e $"Unexpected error: ($parsed.metadata.name)"
+  exit 42
 }
 
 # Handle finalize logic
 def handle-finalize [parsed] {
-  print $"Finalizing ConfigMap: ($parsed.metadata.name)"
-  exit 0
+  print -e $"Unexpected finalize error: ($parsed.metadata.name)"
+  exit 42
 }
 
-# Process a resource - no changes
+# Process a resource - unexpected exit code
 def 'main reconcile' [] {
   let parsed = $in | from yaml
   handle-reconcile $parsed
 }
 
-# Finalize a resource
+# Finalize a resource - unexpected exit code
 def 'main finalize' [] {
   let parsed = $in | from yaml
   handle-finalize $parsed

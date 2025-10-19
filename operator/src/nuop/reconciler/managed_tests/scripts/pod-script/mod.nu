@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the pod script
 def 'main config' [] {

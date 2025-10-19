@@ -1,5 +1,4 @@
-use anyhow::Result;
-use std::{env, fs, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 pub const NUOP_SCRIPT_PATH: &str = "NUOP_SCRIPT_PATH";
 pub const NUOP_MAPPINGS_PATH: &str = "NUOP_MAPPINGS_PATH";
@@ -41,20 +40,17 @@ pub fn find_scripts(script_path: &str) -> Vec<PathBuf> {
             let path = entry.path();
 
             if path.is_dir() {
-                main_files.extend(find_scripts(path.to_str().unwrap()));
-            } else if is_executable(&path).unwrap_or(false) {
-                main_files.push(path);
+                // Check if this directory contains a mod.nu file
+                let mod_nu_path = path.join("mod.nu");
+                if mod_nu_path.exists() && mod_nu_path.is_file() {
+                    main_files.push(mod_nu_path);
+                } else {
+                    // Recurse into subdirectories that don't have mod.nu
+                    main_files.extend(find_scripts(path.to_str().unwrap()));
+                }
             }
         }
     }
 
     main_files
-}
-
-fn is_executable(path: &PathBuf) -> Result<bool> {
-    let metadata = fs::metadata(path)?;
-    let permissions = metadata.permissions();
-    let mode = permissions.mode();
-    // Check if any execute bit is set (user, group, or others)
-    Ok(mode & 0o111 != 0)
 }

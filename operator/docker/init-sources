@@ -56,6 +56,15 @@ def fetch_source [config] {
   let source_dir = if ($dir != "") { $tmp_dir + "/" + $dir } else { $tmp_dir }
 
   cp -r $source_dir $path
+  
+  # Validate that script directories contain mod.nu files
+  let script_dirs = glob $"($path)/*" | where { |p| ($p | path type) == "dir" }
+  $script_dirs | each { |dir|
+    let mod_nu = $"($dir)/mod.nu"
+    if not ($mod_nu | path exists) {
+      print $"Warning: Script directory ($dir) does not contain mod.nu"
+    }
+  }
 }
 
 def main [] {

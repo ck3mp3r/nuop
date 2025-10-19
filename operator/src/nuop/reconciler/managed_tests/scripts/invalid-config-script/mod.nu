@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the invalid config script (intentionally fails)
 def 'main config' [] {

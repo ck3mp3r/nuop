@@ -2,7 +2,23 @@
 
 This directory contains ready-to-use Nushell operator scripts that implement common Kubernetes patterns. These scripts are designed to be used with the Nushell Operator (nuop) and demonstrate how to build controllers using Nushell.
 
-## Config Replicator (`config-replicator`)
+## Script Structure
+
+Each operator script is organized as a directory containing:
+
+- **`mod.nu`**: Main entry point with the operator logic
+- **Additional files**: Optional helper modules and utilities
+
+### Directory Layout
+```
+scripts/
+├── config-replicator/
+│   └── mod.nu              # ConfigMap replication logic
+└── secret-cloner/
+    └── mod.nu              # Secret replication logic
+```
+
+## Config Replicator (`config-replicator/`)
 
 The Config Replicator automatically replicates ConfigMaps across namespaces based on labels and annotations.
 
@@ -42,7 +58,7 @@ data:
 
 This ConfigMap will be replicated to the `production` and `staging` namespaces only.
 
-## Secret Cloner (`secret-cloner`)
+## Secret Cloner (`secret-cloner/`)
 
 The Secret Cloner automatically replicates Secrets across namespaces with the same targeting system as the Config Replicator.
 
@@ -102,9 +118,9 @@ Both scripts use finalizers to ensure proper cleanup when source resources are d
 
 Both operators are configured to requeue after 60 seconds when no changes are detected, ensuring periodic reconciliation to catch any drift.
 
-## Script Structure
+## Script Implementation
 
-Each operator script follows a common pattern:
+Each operator script (`mod.nu`) follows a common pattern:
 
 1. **Configuration**: The `main config` function returns operator metadata including:
    - Script name and target Kubernetes resource kind
@@ -121,6 +137,15 @@ Each operator script follows a common pattern:
 3. **Finalization**: The `main finalize` function handles deletion events:
    - Cleans up all replicated resources
    - Removes finalizers to allow source resource deletion
+
+### Execution Model
+
+Scripts are executed via the Nushell interpreter:
+```bash
+nu scripts/config-replicator/mod.nu config      # Get configuration
+nu scripts/config-replicator/mod.nu reconcile   # Handle resource changes
+nu scripts/config-replicator/mod.nu finalize    # Handle resource deletion
+```
 
 ## Usage with Nushell Operator
 

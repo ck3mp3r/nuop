@@ -1,4 +1,3 @@
-#!/usr/bin/nu --stdin
 
 # Get configuration for the test controller
 def 'main config' [] {
@@ -18,23 +17,23 @@ def 'main config' [] {
 
 # Handle reconcile logic
 def handle-reconcile [parsed] {
-  print $"Reconciling: ($parsed.metadata.name) - changes detected"
-  exit 2
+  print -e $"Error processing: ($parsed.metadata.name)"
+  exit 1
 }
 
 # Handle finalize logic
 def handle-finalize [parsed] {
-  print $"Finalizing: ($parsed.metadata.name)"
-  exit 2
+  print -e $"Error finalizing: ($parsed.metadata.name)"
+  exit 1
 }
 
-# Process a resource - changes detected
+# Process a resource - error
 def 'main reconcile' [] {
   let parsed = $in | from yaml
   handle-reconcile $parsed
 }
 
-# Finalize a resource
+# Finalize a resource - error
 def 'main finalize' [] {
   let parsed = $in | from yaml
   handle-finalize $parsed

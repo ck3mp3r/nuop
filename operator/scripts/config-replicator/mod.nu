@@ -1,5 +1,3 @@
-#!/usr/bin/nu --stdin
-
 # Finalizer identifier
 
 const FINALIZER = "github.com/ck3mp3r-nuop-cfg-repktr-finalizer"

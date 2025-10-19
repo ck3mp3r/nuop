@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the duplicate pod controller
 def 'main config' [] {
