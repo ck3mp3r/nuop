@@ -2,7 +2,7 @@
   description = "Nushell Operator";
 
   inputs = {
-    devshell.url = "github:numtide/devshell";
+    devenv.url = "github:cachix/devenv";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs";
     fenix = {
@@ -15,35 +15,35 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
 
-      perSystem = {system, ...}: let
-        overlays = [inputs.devshell.overlays.default];
-        pkgs = import inputs.nixpkgs {
-          inherit system overlays;
-        };
+      perSystem = {
+        system,
+        pkgs,
+        ...
+      }: let
         operatorPackages = import ./operator/nix {
           inherit
-            overlays
             pkgs
             system
             ;
+          overlays = [];
           fenix = inputs.fenix;
           nixpkgs = inputs.nixpkgs;
         };
       in {
         packages = operatorPackages;
 
-        devShells.default = pkgs.devshell.mkShell {
-          packages = [
-            operatorPackages.toolchain
-          ];
-          imports = [
-            (pkgs.devshell.importTOML ./devshell.toml)
-            "${inputs.devshell}/extra/git/hooks.nix"
-          ];
-          env = [
+        devShells.default = inputs.devenv.lib.mkShell {
+          inherit inputs pkgs;
+          modules = [
+            (import ./devenv.nix)
             {
-              name = "RUST_SRC_PATH";
-              value = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              packages = [
+                operatorPackages.toolchain
+              ];
+
+              env = {
+                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              };
             }
           ];
         };
