@@ -24,13 +24,13 @@ Test each script function independently:
 
 ```bash
 # Test configuration function
-echo '{}' | nu scripts/my-operator/mod.nu config
+echo '{}' | nu operator/scripts/my-operator/mod.nu config
 
 # Test reconcile with sample data
-cat test-data/configmap.json | nu scripts/my-operator/mod.nu reconcile
+cat test-data/configmap.json | nu operator/scripts/my-operator/mod.nu reconcile
 
 # Test finalize with deletion scenario
-cat test-data/deleting-configmap.json | nu scripts/my-operator/mod.nu finalize
+cat test-data/deleting-configmap.json | nu operator/scripts/my-operator/mod.nu finalize
 ```
 
 ### Creating Test Data
@@ -570,7 +570,7 @@ def assert_equal [actual: any, expected: any, message: string] {
 
 # Test example usage
 def test_script_output [] {
-    let result = (echo '{}' | nu scripts/my-operator/mod.nu config | from json)
+    let result = (echo '{}' | nu operator/scripts/my-operator/mod.nu config | from json)
     assert_equal $result.name "my-operator" "Script name should match"
     assert_equal $result.kind "ConfigMap" "Should watch ConfigMaps"
 }
@@ -623,10 +623,10 @@ nu load-test.nu --resources=50  # Performance testing
 
 ```bash
 # Debug script execution with verbose output
-echo '{}' | RUST_LOG=debug nu scripts/my-operator/mod.nu config
+echo '{}' | RUST_LOG=debug nu operator/scripts/my-operator/mod.nu config
 
 # Test with different input data
-cat test-data/edge-case.json | nu scripts/my-operator/mod.nu reconcile
+cat test-data/edge-case.json | nu operator/scripts/my-operator/mod.nu reconcile
 ```
 
 ### Operator Debugging

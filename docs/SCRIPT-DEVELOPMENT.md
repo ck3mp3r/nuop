@@ -31,14 +31,14 @@ Every operator script must implement three main functions in `mod.nu`:
 ### 1. Create Script Directory
 
 ```bash
-mkdir -p scripts/my-operator
-cd scripts/my-operator
+mkdir -p operator/scripts/my-operator
+cd operator/scripts/my-operator
 ```
 
 ### 2. Implement mod.nu
 
 ```nushell
-# scripts/my-operator/mod.nu
+# operator/scripts/my-operator/mod.nu
 
 # Configuration function - defines operator behavior
 def "main config" [] {
@@ -94,7 +94,7 @@ def "main finalize" [] {
 
 ```bash
 # Test configuration
-echo '{}' | nu scripts/my-operator/mod.nu config
+echo '{}' | nu operator/scripts/my-operator/mod.nu config
 
 # Test reconcile with sample resource
 echo '{
@@ -110,7 +110,7 @@ echo '{
   "data": {
     "key": "value"
   }
-}' | nu scripts/my-operator/mod.nu reconcile
+}' | nu operator/scripts/my-operator/mod.nu reconcile
 ```
 
 ## Script API Reference
@@ -251,7 +251,7 @@ Test individual functions:
 
 ```bash
 # Test configuration returns valid format
-config_result=$(echo '{}' | nu scripts/my-operator/mod.nu config)
+config_result=$(echo '{}' | nu operator/scripts/my-operator/mod.nu config)
 echo $config_result | jq '.name'  # Should return script name
 ```
 
@@ -273,7 +273,7 @@ data:
 EOF
 
 # Get resource and test script
-kubectl get configmap test-configmap -o json | nu scripts/my-operator/mod.nu reconcile
+kubectl get configmap test-configmap -o json | nu operator/scripts/my-operator/mod.nu reconcile
 ```
 
 ### Local Development
@@ -331,10 +331,10 @@ kubectl logs -l app.kubernetes.io/name=nuop -f
 
 ```bash
 # Test script directly
-echo '{"test": "data"}' | nu scripts/my-operator/mod.nu reconcile
+echo '{"test": "data"}' | nu operator/scripts/my-operator/mod.nu reconcile
 
 # Check script syntax
-nu --check scripts/my-operator/mod.nu
+nu --check operator/scripts/my-operator/mod.nu
 
 # Run with verbose logging
 RUST_LOG=debug op-run-standard

@@ -124,7 +124,7 @@ kubectl auth can-i get configmaps --as=system:serviceaccount:default:nuop-operat
 kubectl exec -it <operator-pod> -- ls -la /scripts
 
 # Verify script configuration
-kubectl exec -it <operator-pod> -- nu /scripts/<script>/mod.nu config
+kubectl exec -it <operator-pod> -- nu /operator/scripts/<script>/mod.nu config
 
 # Check operator mode
 kubectl logs -l app.kubernetes.io/name=nuop | grep "Running in.*mode"
@@ -231,7 +231,7 @@ kubectl logs -l app.kubernetes.io/name=nuop | grep -E "reconcile.*took"
 
 ### "Script not found"
 ```
-Error: Script directory '/scripts/my-script' does not contain mod.nu
+Error: Script directory '/operator/scripts/my-script' does not contain mod.nu
 ```
 **Solution**: Ensure script directory has `mod.nu` file with correct structure
 
