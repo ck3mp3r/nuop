@@ -11,7 +11,7 @@ This guide covers setting up your development environment and working with the N
 
 1. **Clone and enter the repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ck3mp3r/nuop.git
    cd nuop
    direnv allow  # Automatically activates development environment
    ```
