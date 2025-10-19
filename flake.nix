@@ -2,8 +2,8 @@
   description = "Nushell Operator";
 
   inputs = {
-    devshell.url = "github:numtide/devshell";
-    flake-utils.url = "github:numtide/flake-utils";
+    devenv.url = "github:cachix/devenv";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs";
     fenix = {
       url = "github:nix-community/fenix";
@@ -11,47 +11,60 @@
     };
   };
 
-  outputs = {
-    flake-utils,
-    fenix,
-    devshell,
-    nixpkgs,
-    ...
-  }:
-    flake-utils.lib.eachDefaultSystem (
-      system: let
-        overlays = [devshell.overlays.default];
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
+  outputs = inputs @ {flake-parts, ...}:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
+
+      perSystem = {
+        system,
+        pkgs,
+        ...
+      }: let
         operatorPackages = import ./operator/nix {
           inherit
-            fenix
-            nixpkgs
-            overlays
             pkgs
             system
             ;
+          overlays = [];
+          fenix = inputs.fenix;
+          nixpkgs = inputs.nixpkgs;
         };
       in {
         packages = operatorPackages;
-        devShells.default = pkgs.devshell.mkShell {
-          packages = [
-            operatorPackages.toolchain
-          ];
-          imports = [
-            (pkgs.devshell.importTOML ./devshell.toml)
-            "${devshell}/extra/git/hooks.nix"
-          ];
-          env = [
+
+        devShells.default = inputs.devenv.lib.mkShell {
+          inherit inputs pkgs;
+          modules = [
+            (import ./devenv.nix)
             {
-              name = "RUST_SRC_PATH";
-              value = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              packages = [
+                operatorPackages.toolchain
+              ];
+
+              env = {
+                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              };
+            }
+          ];
+        };
+
+        devShells.ci = inputs.devenv.lib.mkShell {
+          inherit inputs pkgs;
+          modules = [
+            (import ./devenv-ci.nix)
+            {
+              packages = [
+                operatorPackages.toolchain
+              ];
+
+              env = {
+                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              };
             }
           ];
         };
 
         formatter = pkgs.alejandra;
-      }
-    );
+      };
+    };
 }
