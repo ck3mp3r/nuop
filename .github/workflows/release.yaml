@@ -71,21 +71,21 @@ jobs:
 
       - name: Create release branch
         id: branch
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           BRANCH_NAME="release/v${{ steps.new_version.outputs.version }}"
           git checkout -b $BRANCH_NAME
           echo "release_branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Update Cargo.toml version
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.version }}"
           echo "Updating Cargo.toml to $NEW_VERSION"
           sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" operator/Cargo.toml
 
       - name: Commit version bump
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -153,9 +153,24 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Push release branch
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           git push origin ${{ steps.branch.outputs.release_branch }}
+
+      - name: Branch Test Summary
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "## 🧪 Release Workflow Test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Testing release workflow on branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current version:** ${{ steps.cargo_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Calculated version:** ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Needs version bump:** ${{ steps.new_version.outputs.needs_branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔒 **Safety:** No branches, commits, or releases will be created during testing." >> $GITHUB_STEP_SUMMARY
 
   build:
     needs: prepare-release
@@ -258,7 +273,40 @@ jobs:
 
 
 
-      - name: Create GitHub Release
+      - name: Test Release (Branch Run)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "## 🧪 Release Test Run (Branch: ${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This is a **test run** on branch \`${{ github.ref_name }}\`. No actual release will be created." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`v${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Title:** Release v${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Body Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Release v${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.prepare-release.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Supported Architectures" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/amd64 (native builds)" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/arm64 (native builds)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Built with Determinate Nix for blazing fast compilation!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **To create an actual release:** Run this workflow on the \`main\` branch." >> $GITHUB_STEP_SUMMARY
+
+      - name: Create GitHub Release (Main Branch)
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare-release.outputs.version }}
@@ -266,7 +314,6 @@ jobs:
           body: |
             ## Release v${{ needs.prepare-release.outputs.version }}
 
-            ### Changes
             ${{ needs.prepare-release.outputs.changelog }}
 
             ### Docker Images
@@ -284,7 +331,7 @@ jobs:
           target_commitish: ${{ needs.prepare-release.outputs.release_branch || github.ref }}
 
       - name: Merge release branch back to main
-        if: needs.prepare-release.outputs.needs_branch == 'true'
+        if: needs.prepare-release.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -292,3 +339,17 @@ jobs:
           git merge --no-ff ${{ needs.prepare-release.outputs.release_branch }} -m "Release v${{ needs.prepare-release.outputs.version }}"
           git push origin main
           git push origin --delete ${{ needs.prepare-release.outputs.release_branch }}
+
+      - name: Test Summary (Branch Run)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Version calculation:** ${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Changelog generation:** Generated $(echo '${{ needs.prepare-release.outputs.changelog }}' | wc -l) lines" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Docker builds:** AMD64 + ARM64 native builds completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Multi-arch manifest:** Created successfully" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️  **Branch protection:** No release created (testing on branch)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All systems ready for production release! 🚀" >> $GITHUB_STEP_SUMMARY
