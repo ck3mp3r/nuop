@@ -19,7 +19,6 @@ git clone https://github.com/ck3mp3r/nuop.git
 cd nuop
 direnv allow    # Activates development environment
 op-tests        # Run tests
-kind-start      # Start local Kubernetes cluster
 ```
 
 ## ✨ Key Features

@@ -599,11 +599,8 @@ jobs:
     - name: Run script unit tests
       run: nix develop --command nu test-scripts.nu
     
-    - name: Start Kind cluster
-      run: nix develop --command kind-start
-    
-    - name: Run integration tests
-      run: nix develop --command nu integration-test.nu
+    - name: Run tests
+      run: nix develop --command op-tests
 ```
 
 ### Local Testing Workflow
@@ -611,10 +608,6 @@ jobs:
 ```bash
 # Development testing workflow
 op-tests                    # Run Rust unit/integration tests
-nu test-scripts.nu         # Run script unit tests
-kind-start                 # Start local cluster
-nu integration-test.nu     # Run integration tests
-nu load-test.nu --resources=50  # Performance testing
 ```
 
 ## Debugging Test Failures

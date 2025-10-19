@@ -48,7 +48,7 @@ The project uses [devenv](https://devenv.sh/) for reproducible development envir
 | `op-coverage` | Generate code coverage report |
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
-| `kind-start` | Start local Kubernetes cluster |
+
 | `op-run-standard` | Run operator in standard mode locally |
 | `op-run-manager` | Run operator in manager mode locally |
 | `op-run-managed` | Run operator in managed mode locally |

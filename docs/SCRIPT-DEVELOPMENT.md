@@ -45,48 +45,53 @@ def "main config" [] {
     {
         name: "my-operator",
         kind: "ConfigMap",          # Kubernetes resource kind to watch
-        apiVersion: "v1",           # API version of the resource
-        labelSelector: {            # Optional: filter resources by labels
+        version: "v1",              # API version of the resource
+        labelSelectors: {           # Optional: filter resources by labels
             "app.kubernetes.io/managed-by": "my-operator"
         },
         finalizer: "my-operator.example.com/finalizer",
-        requeueAfterSeconds: 300    # Requeue interval when no changes
-    }
+        requeue_after_noop: 300     # Requeue interval when no changes (seconds)
+    } | to yaml
 }
 
 # Reconcile function - handles create/update events
 def "main reconcile" [] {
-    let resource = $in  # Current resource state from Kubernetes
+    let resource = ($in | from yaml)  # Parse YAML input from Kubernetes
     
     print $"Processing ($resource.metadata.name) in ($resource.metadata.namespace)"
     
     # Your reconciliation logic here
+    # Use kubectl commands to make changes
     # Return exit codes:
     # 0 = no changes made
-    # 2 = changes made, update resource
+    # 2 = changes made
     
-    # Example: Add an annotation to track processing
-    let updated_resource = ($resource | upsert metadata.annotations.processed-at (date now | format date "%Y-%m-%d %H:%M:%S"))
+    # Example: Add a label using kubectl
+    let result = (kubectl label configmap $resource.metadata.name processed=true -n $resource.metadata.namespace | complete)
     
-    # Output the updated resource to stdout as JSON
-    $updated_resource | to json
-    
-    # Exit with code 2 to indicate changes were made
-    exit 2
+    if $result.exit_code == 0 {
+        print "✅ Added processed label"
+        exit 2  # Indicate changes were made
+    } else {
+        print "❌ Failed to update resource"
+        exit 0  # No changes made
+    }
 }
 
 # Finalize function - handles resource deletion
 def "main finalize" [] {
-    let resource = $in  # Resource being deleted
+    let resource = ($in | from yaml)  # Parse YAML input from Kubernetes
     
     print $"Finalizing ($resource.metadata.name) in ($resource.metadata.namespace)"
     
-    # Cleanup logic here
-    # Remove finalizer to allow deletion
-    let cleaned_resource = ($resource | upsert metadata.finalizers [])
+    # Cleanup logic here - remove any managed resources
+    # The operator will automatically remove finalizers
     
-    $cleaned_resource | to json
-    exit 2
+    # Example: Delete related configmaps
+    kubectl delete configmap -l managed-by=$resource.metadata.name -n $resource.metadata.namespace
+    
+    print "✅ Cleanup completed"
+    exit 0
 }
 ```
 
