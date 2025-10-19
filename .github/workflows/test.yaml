@@ -6,7 +6,7 @@ on:
   push:
     paths:
       - flake.*
-      - devshell.toml
+      - devenv.nix
       - operator/Cargo.*
       - operator/flake.*
       - operator/src/**
@@ -51,4 +51,4 @@ jobs:
 
       - name: run tests
         run: |
-          nix develop --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
+          nix develop --no-pure-eval --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
