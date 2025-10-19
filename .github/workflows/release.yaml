@@ -18,6 +18,7 @@ jobs:
       version: ${{ steps.new_version.outputs.version }}
       needs_branch: ${{ steps.new_version.outputs.needs_branch }}
       release_branch: ${{ steps.branch.outputs.release_branch }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
 
     steps:
       - uses: actions/create-github-app-token@v2
@@ -90,6 +91,66 @@ jobs:
           git config --local user.name "GitHub Action"
           git add operator/Cargo.toml
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
+
+      - name: Generate changelog before version bump
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+            COMMIT_RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            echo "No previous tag found, generating changelog from first commit"
+            COMMIT_RANGE="HEAD"
+          fi
+
+          # Get all meaningful commits, excluding noise
+          ALL_COMMITS=$(git log --pretty=format:"%s (%h)" $COMMIT_RANGE \
+            --grep="^chore: bump version" \
+            --grep="^Merge " \
+            --grep="^Release " \
+            --grep="^chore(release)" \
+            --invert-grep \
+            --no-merges)
+
+          # Categorize commits
+          FEATURES=$(echo "$ALL_COMMITS" | grep "^feat" | sed 's/^/- /' || true)
+          FIXES=$(echo "$ALL_COMMITS" | grep "^fix" | sed 's/^/- /' || true)
+          DOCS=$(echo "$ALL_COMMITS" | grep "^docs" | sed 's/^/- /' || true)
+          CHORES=$(echo "$ALL_COMMITS" | grep "^chore" | grep -v "chore: bump version" | sed 's/^/- /' || true)
+          REFACTOR=$(echo "$ALL_COMMITS" | grep "^refactor" | sed 's/^/- /' || true)
+          OTHER=$(echo "$ALL_COMMITS" | grep -v "^feat" | grep -v "^fix" | grep -v "^docs" | grep -v "^chore" | grep -v "^refactor" | sed 's/^/- /' || true)
+
+          # Build categorized changelog
+          CHANGELOG=""
+          if [ -n "$FEATURES" ]; then
+            CHANGELOG="$CHANGELOG### ✨ New Features\n$FEATURES\n\n"
+          fi
+          if [ -n "$FIXES" ]; then
+            CHANGELOG="$CHANGELOG### 🐛 Bug Fixes\n$FIXES\n\n"
+          fi
+          if [ -n "$REFACTOR" ]; then
+            CHANGELOG="$CHANGELOG### ♻️ Refactoring\n$REFACTOR\n\n"
+          fi
+          if [ -n "$DOCS" ]; then
+            CHANGELOG="$CHANGELOG### 📚 Documentation\n$DOCS\n\n"
+          fi
+          if [ -n "$CHORES" ]; then
+            CHANGELOG="$CHANGELOG### 🔧 Maintenance\n$CHORES\n\n"
+          fi
+          if [ -n "$OTHER" ]; then
+            CHANGELOG="$CHANGELOG### 📦 Other Changes\n$OTHER\n\n"
+          fi
+
+          # If no meaningful changes found, provide default
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="### 📦 Changes\n- Initial release\n\n"
+          fi
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Push release branch
         if: steps.new_version.outputs.needs_branch == 'true'
@@ -195,22 +256,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
 
-          if [ -n "$PREVIOUS_TAG" ]; then
-            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD)
-          else
-            echo "No previous tag found, generating changelog from first commit"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
-          fi
-
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -221,7 +267,7 @@ jobs:
             ## Release v${{ needs.prepare-release.outputs.version }}
 
             ### Changes
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ needs.prepare-release.outputs.changelog }}
 
             ### Docker Images
             - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-release.outputs.version }}`
