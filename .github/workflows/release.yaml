@@ -9,11 +9,16 @@ env:
   IMAGE_NAME: ck3mp3r/nuop
 
 jobs:
-  release:
+  prepare-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+    outputs:
+      version: ${{ steps.new_version.outputs.version }}
+      needs_branch: ${{ steps.new_version.outputs.needs_branch }}
+      release_branch: ${{ steps.branch.outputs.release_branch }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
 
     steps:
       - uses: actions/create-github-app-token@v2
@@ -65,34 +70,140 @@ jobs:
           echo "needs_branch=$NEEDS_BRANCH" >> $GITHUB_OUTPUT
 
       - name: Create release branch
-        if: steps.new_version.outputs.needs_branch == 'true'
+        id: branch
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           BRANCH_NAME="release/v${{ steps.new_version.outputs.version }}"
           git checkout -b $BRANCH_NAME
-          echo "RELEASE_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "release_branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Update Cargo.toml version
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.version }}"
           echo "Updating Cargo.toml to $NEW_VERSION"
           sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" operator/Cargo.toml
 
       - name: Commit version bump
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add operator/Cargo.toml
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
 
-      - name: Push release branch
-        if: steps.new_version.outputs.needs_branch == 'true'
+      - name: Generate changelog before version bump
+        id: changelog
         run: |
-          git push origin ${{ env.RELEASE_BRANCH }}
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+            COMMIT_RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            echo "No previous tag found, generating changelog from first commit"
+            COMMIT_RANGE="HEAD"
+          fi
+
+          # Get all meaningful commits, excluding noise
+          ALL_COMMITS=$(git log --pretty=format:"%s (%h)" $COMMIT_RANGE \
+            --grep="^chore: bump version" \
+            --grep="^Merge " \
+            --grep="^Release " \
+            --grep="^chore(release)" \
+            --invert-grep \
+            --no-merges)
+
+          # Categorize commits
+          FEATURES=$(echo "$ALL_COMMITS" | grep "^feat" | sed 's/^/- /' || true)
+          FIXES=$(echo "$ALL_COMMITS" | grep "^fix" | sed 's/^/- /' || true)
+          DOCS=$(echo "$ALL_COMMITS" | grep "^docs" | sed 's/^/- /' || true)
+          CHORES=$(echo "$ALL_COMMITS" | grep "^chore" | grep -v "chore: bump version" | sed 's/^/- /' || true)
+          REFACTOR=$(echo "$ALL_COMMITS" | grep "^refactor" | sed 's/^/- /' || true)
+          OTHER=$(echo "$ALL_COMMITS" | grep -v "^feat" | grep -v "^fix" | grep -v "^docs" | grep -v "^chore" | grep -v "^refactor" | sed 's/^/- /' || true)
+
+          # Build categorized changelog
+          CHANGELOG=""
+          if [ -n "$FEATURES" ]; then
+            CHANGELOG="$CHANGELOG### ✨ New Features\n$FEATURES\n\n"
+          fi
+          if [ -n "$FIXES" ]; then
+            CHANGELOG="$CHANGELOG### 🐛 Bug Fixes\n$FIXES\n\n"
+          fi
+          if [ -n "$REFACTOR" ]; then
+            CHANGELOG="$CHANGELOG### ♻️ Refactoring\n$REFACTOR\n\n"
+          fi
+          if [ -n "$DOCS" ]; then
+            CHANGELOG="$CHANGELOG### 📚 Documentation\n$DOCS\n\n"
+          fi
+          if [ -n "$CHORES" ]; then
+            CHANGELOG="$CHANGELOG### 🔧 Maintenance\n$CHORES\n\n"
+          fi
+          if [ -n "$OTHER" ]; then
+            CHANGELOG="$CHANGELOG### 📦 Other Changes\n$OTHER\n\n"
+          fi
+
+          # If no meaningful changes found, provide default
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="### 📦 Changes\n- Initial release\n\n"
+          fi
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Push release branch
+        if: steps.new_version.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          git push origin ${{ steps.branch.outputs.release_branch }}
+
+      - name: Branch Test Summary
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "## 🧪 Release Workflow Test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Testing release workflow on branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current version:** ${{ steps.cargo_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Calculated version:** ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Needs version bump:** ${{ steps.new_version.outputs.needs_branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔒 **Safety:** No branches, commits, or releases will be created during testing." >> $GITHUB_STEP_SUMMARY
+
+  build:
+    needs: prepare-release
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_branch || github.ref }}
+
+      - name: Install Nix with Determinate Systems installer
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Run the Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build operator with Nix
+        run: |
+          nix build --print-build-logs
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -104,63 +215,141 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v6
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
           context: ./operator
           file: ./operator/docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.new_version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-release.outputs.version }}-${{ matrix.arch }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          build-contexts: |
+            nix-result=result
 
-      - name: Generate changelog
-        id: changelog
+  manifest:
+    needs: [prepare-release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: token
+        with:
+          app-id: ${{ secrets.BOT_ID }}
+          private-key: ${{ secrets.BOT }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.token.outputs.token }}
+          ref: ${{ needs.prepare-release.outputs.release_branch || github.ref }}
+          fetch-depth: 0
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest
         run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          VERSION="${{ needs.prepare-release.outputs.version }}"
 
-          if [ -n "$PREVIOUS_TAG" ]; then
-            echo "Generating changelog from $PREVIOUS_TAG to HEAD"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD)
-          else
-            echo "No previous tag found, generating changelog from first commit"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
-          fi
+          # Create versioned manifest
+          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}-arm64
 
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Create latest manifest
+          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
 
-      - name: Create GitHub Release
+
+
+      - name: Test Release (Branch Run)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "## 🧪 Release Test Run (Branch: ${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This is a **test run** on branch \`${{ github.ref_name }}\`. No actual release will be created." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`v${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Title:** Release v${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Body Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Release v${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.prepare-release.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Supported Architectures" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/amd64 (native builds)" >> $GITHUB_STEP_SUMMARY
+          echo "- linux/arm64 (native builds)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Built with Determinate Nix for blazing fast compilation!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **To create an actual release:** Run this workflow on the \`main\` branch." >> $GITHUB_STEP_SUMMARY
+
+      - name: Create GitHub Release (Main Branch)
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.new_version.outputs.version }}
-          name: Release v${{ steps.new_version.outputs.version }}
+          tag_name: v${{ needs.prepare-release.outputs.version }}
+          name: Release v${{ needs.prepare-release.outputs.version }}
           body: |
-            ## Release v${{ steps.new_version.outputs.version }}
+            ## Release v${{ needs.prepare-release.outputs.version }}
 
-            ### Changes
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ needs.prepare-release.outputs.changelog }}
 
             ### Docker Images
-            - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.new_version.outputs.version }}`
+            - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-release.outputs.version }}`
             - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest`
 
             ### Supported Architectures
-            - linux/amd64
-            - linux/arm64
+            - linux/amd64 (native builds)
+            - linux/arm64 (native builds)
+
+            Built with Determinate Nix for blazing fast compilation!
 
           draft: false
           prerelease: false
-          target_commitish: ${{ env.RELEASE_BRANCH || github.ref }}
+          target_commitish: ${{ needs.prepare-release.outputs.release_branch || github.ref }}
 
       - name: Merge release branch back to main
-        if: steps.new_version.outputs.needs_branch == 'true'
+        if: needs.prepare-release.outputs.needs_branch == 'true' && github.ref == 'refs/heads/main'
         run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git checkout main
-          git merge --no-ff ${{ env.RELEASE_BRANCH }} -m "Release v${{ steps.new_version.outputs.version }}"
+          git merge --no-ff ${{ needs.prepare-release.outputs.release_branch }} -m "Release v${{ needs.prepare-release.outputs.version }}"
           git push origin main
-          git push origin --delete ${{ env.RELEASE_BRANCH }}
+          git push origin --delete ${{ needs.prepare-release.outputs.release_branch }}
+
+      - name: Test Summary (Branch Run)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Version calculation:** ${{ needs.prepare-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Changelog generation:** Generated $(echo '${{ needs.prepare-release.outputs.changelog }}' | wc -l) lines" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Docker builds:** AMD64 + ARM64 native builds completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Multi-arch manifest:** Created successfully" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️  **Branch protection:** No release created (testing on branch)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All systems ready for production release! 🚀" >> $GITHUB_STEP_SUMMARY

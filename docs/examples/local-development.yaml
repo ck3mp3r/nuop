@@ -1,7 +1,7 @@
+---
 # Local Development Example
 # Shows volume-mounted local scripts for development workflow
 
----
 apiVersion: kemper.buzz/v1alpha1
 kind: NuOperator
 metadata:
@@ -53,18 +53,18 @@ spec:
     spec:
       serviceAccountName: local-dev-sa
       containers:
-      - name: operator
-        image: ghcr.io/ck3mp3r/nuop:latest
-        env:
-        - name: NUOP_MODE
-          value: managed
-        - name: RUST_LOG
-          value: debug
-        volumeMounts:
-        - name: dev-scripts
-          mountPath: /opt/dev-scripts
+        - name: operator
+          image: ghcr.io/ck3mp3r/nuop:latest
+          env:
+            - name: NUOP_MODE
+              value: managed
+            - name: RUST_LOG
+              value: debug
+          volumeMounts:
+            - name: dev-scripts
+              mountPath: /opt/dev-scripts
       volumes:
-      - name: dev-scripts
-        hostPath:
-          path: /path/to/your/local/scripts
-          type: Directory
+        - name: dev-scripts
+          hostPath:
+            path: /path/to/your/local/scripts
+            type: Directory
