@@ -6,9 +6,14 @@ This directory contains example configurations for the NuOperator CRD. These exa
 
 **⚠️ Important**: Based on testing with nuop v0.2.0, there are some current limitations:
 
+### Technical Details
+- **Current Nushell**: v0.106.1+ supports `get --optional` flag
+- **Container Nushell**: nuop v0.2.0 container has older Nushell version without `--optional` support
+- **Init Script**: Uses `get --optional` syntax, causing container startup failure
+
 ### Manager + Managed Mode
-- ❌ **Current Issue**: Init container has Nushell compatibility issues (uses `--optional` flag that doesn't exist in current Nushell)
-- 🔧 **Workaround**: Needs updated init container script
+- ❌ **Current Issue**: Container has outdated Nushell version that doesn't support `--optional` flag
+- 🔧 **Workaround**: Needs updated nuop image with current Nushell version
 - ✅ **Manager works**: Creates deployments and ConfigMaps correctly
 - 📝 **Use case**: Best for when the init container issue is resolved
 
@@ -40,7 +45,7 @@ kubectl get nuoperators  # Shows resource created
 - ✅ RBAC configuration is correct
 
 **What doesn't work**:
-- ❌ Init container crashes (Nushell `--optional` flag issue)
+- ❌ Init container crashes (container has outdated Nushell version, missing `--optional` flag)
 
 ```bash
 kubectl apply -f config-replicator.yaml
@@ -72,11 +77,11 @@ kubectl logs deployment/config-replicator-nuop -c init-container  # Shows error
 4. **Script Syntax**: Local script testing works (config-replicator and secret-cloner scripts are valid)
 
 ### ❌ Current Issues
-1. **Init Container**: Nushell compatibility issue with `--optional` flag
+1. **Init Container**: Outdated Nushell version in container doesn't support `--optional` flag
 2. **Standard Mode**: Requires custom image with scripts bundled
 
 ### 🔧 Workarounds
-1. **For Manager+Managed**: Wait for updated nuop image with fixed init container
+1. **For Manager+Managed**: Wait for updated nuop image with current Nushell version
 2. **For Standard Mode**: Build custom image with scripts:
    ```dockerfile
    FROM ghcr.io/ck3mp3r/nuop:latest
@@ -130,7 +135,7 @@ cat test-configmap.yaml | nu operator/scripts/config-replicator/mod.nu reconcile
 
 For fully working examples, the following needs to be addressed:
 
-1. **Update init container script** in nuop image to use current Nushell syntax
+1. **Update Nushell version** in nuop image to support current syntax (including `--optional` flag)
 2. **Provide pre-built images** with example scripts bundled for Standard mode
 3. **Update examples** once container issues are resolved
 
