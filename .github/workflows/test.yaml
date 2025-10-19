@@ -12,6 +12,10 @@ on:
       - operator/src/**
       - .github/workflows/**
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
