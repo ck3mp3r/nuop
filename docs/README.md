@@ -5,7 +5,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ## 🚀 Getting Started
 
 ### For Users
-- **[Examples](../examples/README.md)** - Sample configurations and use cases
+- **[Examples](examples/README.md)** - Sample configurations and use cases
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Debugging and common issues
 
@@ -27,7 +27,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 
 ### Examples and Patterns
 - **[Example Scripts](../operator/scripts/README.md)** - Working operator implementations
-- **[Configuration Examples](../examples/README.md)** - Various deployment patterns
+- **[Configuration Examples](examples/README.md)** - Various deployment patterns
 - **[Testing Guide](TESTING.md)** - Testing custom scripts and operators
 
 ## 🛠️ Development Resources
@@ -47,7 +47,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ### First Time Users
 1. Start with the main [README](../README.md) for project overview
 2. Follow [Development Setup](DEVELOPMENT.md) to get your environment ready
-3. Try the [Examples](../examples/README.md) to see nuop in action
+3. Try the [Examples](examples/README.md) to see nuop in action
 
 ### Script Developers
 1. Read [Script Development Guide](SCRIPT-DEVELOPMENT.md) for complete tutorial

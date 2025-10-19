@@ -59,7 +59,7 @@ This directory contains various example configurations for the NuOperator CRD.
 Apply any of these examples to your cluster:
 
 ```bash
-kubectl apply -f examples/basic-example.yaml
+kubectl apply -f docs/examples/basic-example.yaml
 ```
 
 Make sure to adjust:

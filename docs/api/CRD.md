@@ -373,5 +373,5 @@ The `status` field is managed by the operator and reflects the current state of 
 ## Related Documentation
 
 - **[Script Development Guide](../SCRIPT-DEVELOPMENT.md)** - How to write operator scripts
-- **[Examples](../../examples/README.md)** - Complete NuOperator configurations
+- **[Examples](../examples/README.md)** - Complete NuOperator configurations
 - **[Deployment Guide](../DEPLOYMENT.md)** - Production deployment practices

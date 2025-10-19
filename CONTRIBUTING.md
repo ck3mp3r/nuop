@@ -127,7 +127,7 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 3. **Deploy operator**:
    ```bash
-   kubectl apply -f examples/basic-example.yaml
+   kubectl apply -f docs/examples/basic-example.yaml
    ```
 
 4. **Check logs**:
