@@ -56,10 +56,6 @@ jobs:
         with:
           use-flakehub: false
 
-      - run: |
-          nix profile install nixpkgs#nushell
-          sudo ln -s $(which nu) /usr/bin/nu
-
       - name: run tests
         run: |
-          nix develop --no-pure-eval --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
+          nix develop .#ci --no-pure-eval --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored

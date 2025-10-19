@@ -48,6 +48,22 @@
           ];
         };
 
+        devShells.ci = inputs.devenv.lib.mkShell {
+          inherit inputs pkgs;
+          modules = [
+            (import ./devenv-ci.nix)
+            {
+              packages = [
+                operatorPackages.toolchain
+              ];
+
+              env = {
+                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              };
+            }
+          ];
+        };
+
         formatter = pkgs.alejandra;
       };
     };
