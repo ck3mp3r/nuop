@@ -1,27 +1,70 @@
+# Local Development Example
+# Shows volume-mounted local scripts for development workflow
+
 ---
 apiVersion: kemper.buzz/v1alpha1
 kind: NuOperator
 metadata:
-  name: local-development
-  namespace: dev
+  name: local-dev
+  namespace: default
 spec:
-  # No serviceAccountName specified - will use default
+  serviceAccountName: local-dev-sa
   env:
     - name: RUST_LOG
-      value: trace
+      value: debug
     - name: DEV_MODE
       value: "true"
   mappings:
-    - name: dev-pod-helper
+    - name: my-local-script
+      group: ""
       version: v1
-      kind: Pod
+      kind: ConfigMap
       labelSelectors:
         environment: development
-        owner: developer
   sources:
-    # Local volume mount (mounted into container at /scripts/local)
-    - location: /scripts/local
-      path: /dev-scripts
-    # Git repository for development scripts
-    - location: https://github.com/example/dev-scripts.git?ref=dev
-      path: /custom-scripts
+    # Local volume mount (for development)
+    - location: /opt/dev-scripts
+      path: /scripts
+
+---
+# ServiceAccount for local development
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: local-dev-sa
+  namespace: default
+
+---
+# Deployment with volume mount for local development
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-dev-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: local-dev-operator
+  template:
+    metadata:
+      labels:
+        app: local-dev-operator
+    spec:
+      serviceAccountName: local-dev-sa
+      containers:
+      - name: operator
+        image: ghcr.io/ck3mp3r/nuop:latest
+        env:
+        - name: NUOP_MODE
+          value: managed
+        - name: RUST_LOG
+          value: debug
+        volumeMounts:
+        - name: dev-scripts
+          mountPath: /opt/dev-scripts
+      volumes:
+      - name: dev-scripts
+        hostPath:
+          path: /path/to/your/local/scripts
+          type: Directory

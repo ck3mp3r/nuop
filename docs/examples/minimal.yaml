@@ -1,0 +1,18 @@
+# Minimal Example
+# The simplest possible NuOperator configuration
+
+---
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: minimal-example
+  namespace: default
+spec:
+  mappings:
+    - name: config-replicator
+      group: ""
+      version: v1
+      kind: ConfigMap
+  sources:
+    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
+      path: /scripts

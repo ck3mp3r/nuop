@@ -1,69 +1,133 @@
 # NuOperator Examples
 
-This directory contains various example configurations for the NuOperator CRD.
+This directory contains working examples for the NuOperator CRD that demonstrate real functionality using actual scripts from the nuop repository.
 
-## Examples Overview
+## Available Examples
 
-### Basic Examples
-- **basic-example.yaml** - Simple NuOperator configuration with minimal settings
-- **minimal-operator.yaml** - The most minimal configuration possible
+### 1. config-replicator.yaml
+**Purpose**: Demonstrates ConfigMap replication across namespaces using the built-in config-replicator script.
 
-### Development Examples
-- **local-development.yaml** - Configuration for local development with volume-mounted sources
-- **foo-bar.yaml** - Original example with secret cloner and config replicator
+**Features shown**:
+- Manager + Managed mode deployment
+- Real script usage (`config-replicator` from nuop repository)
+- Proper RBAC configuration for ConfigMap operations
+- Label-based resource selection
+- Complete example with test ConfigMap
 
-### Production Examples
-- **multi-resource-operator.yaml** - Complex operator managing multiple resource types with credentials
-- **namespace-manager.yaml** - Operator for managing namespace provisioning
-- **custom-resource-operator.yaml** - Example working with custom resources (CRDs)
-
-### Supporting Resources
-- **config-alpha.yaml** / **config-beta.yaml** - Example ConfigMaps with various labels
-- **secret-alpha.yaml** / **secrets-examples.yaml** - Example Secrets for testing
-- **sample-resources.yaml** - Sample Deployments, Services, Pods, and Namespaces
-- **mappings/secret-cloner.yaml** - Example mapping configuration
-
-## Key Features Demonstrated
-
-### Environment Variables
-- Static values
-- ConfigMap references (`configMapKeyRef`)
-- Secret references (`secretKeyRef`)
-- Field references (`fieldRef`)
-- Resource field references (`resourceFieldRef`)
-
-### Source Types
-- Git repositories (https://, git://) with optional authentication
-- Local filesystem paths (volume mounts or container paths)
-- Query parameters for git repos: `?ref=branch&dir=subdirectory`
-
-### Source Authentication
-- Username/password authentication
-- Token-based authentication
-- Mixed authentication methods
-
-### Resource Mappings
-- Core Kubernetes resources (Pod, Service, ConfigMap, Secret, etc.)
-- Custom resources with specific groups
-- Label selectors and field selectors
-- Custom requeue intervals
-
-### Advanced Configuration
-- Custom images
-- Service account assignment
-- Multiple source repositories
-- Different authentication per source
-
-## Usage
-
-Apply any of these examples to your cluster:
-
+**Usage**:
 ```bash
-kubectl apply -f docs/examples/basic-example.yaml
+kubectl apply -f config-replicator.yaml
+
+# Test by creating a ConfigMap with the replication label
+# (Example ConfigMap is included in the file)
 ```
 
-Make sure to adjust:
-- Namespaces to match your environment
-- Source repository URLs
-- Credentials and secrets
-- Service account names and RBAC permissions
+### 2. secret-cloner.yaml  
+**Purpose**: Demonstrates Secret cloning across namespaces using the built-in secret-cloner script.
+
+**Features shown**:
+- Secret management operations
+- Cross-namespace secret replication
+- Proper RBAC for Secret operations
+- Complete example with test Secret
+
+**Usage**:
+```bash
+kubectl apply -f secret-cloner.yaml
+
+# Test by creating a Secret with the replication label
+# (Example Secret is included in the file)
+```
+
+### 3. minimal.yaml
+**Purpose**: The simplest possible NuOperator configuration for learning the basics.
+
+**Features shown**:
+- Minimal required fields only
+- No RBAC (uses default service account)
+- Basic mapping configuration
+
+**Usage**:
+```bash
+kubectl apply -f minimal.yaml
+```
+
+### 4. local-development.yaml
+**Purpose**: Shows how to develop and test scripts locally using volume mounts.
+
+**Features shown**:
+- Local script development workflow
+- Volume-mounted script sources
+- Development-specific environment variables
+- Custom deployment with hostPath volumes
+
+**Usage**:
+```bash
+# Modify the hostPath to point to your local script directory
+kubectl apply -f local-development.yaml
+```
+
+## Testing the Examples
+
+### Prerequisites
+1. A Kubernetes cluster with nuop manager deployed
+2. The nuop CRDs installed (`kubectl apply -f operator/chart/crds/nuop.yaml`)
+
+### Testing ConfigMap Replication
+```bash
+# Apply the config-replicator example
+kubectl apply -f config-replicator.yaml
+
+# The example includes a test ConfigMap - check if it gets replicated
+kubectl get configmaps -A -l app.kubernetes.io/replicated-by
+
+# Check operator logs
+kubectl logs -l app.kubernetes.io/name=nuop
+```
+
+### Testing Secret Cloning
+```bash
+# Apply the secret-cloner example  
+kubectl apply -f secret-cloner.yaml
+
+# The example includes a test Secret - check if it gets cloned
+kubectl get secrets -A -l app.kubernetes.io/replicated-by
+
+# Check operator logs
+kubectl logs -l app.kubernetes.io/name=nuop
+```
+
+## Key Concepts Demonstrated
+
+### Manager + Managed Mode
+All examples use the Manager + Managed deployment mode where:
+- A manager watches NuOperator custom resources
+- The manager creates managed operator deployments 
+- Scripts are fetched from the nuop repository
+
+### Real Script Integration
+Examples use actual working scripts from `operator/scripts/`:
+- `config-replicator` - Replicates ConfigMaps to target namespaces
+- `secret-cloner` - Clones Secrets to target namespaces
+
+### Proper RBAC
+Working examples include correct RBAC configurations that grant scripts only the permissions they need.
+
+### Label-Based Selection
+Scripts watch for resources with specific labels:
+- `app.kubernetes.io/replicate: "yes"` - Marks resources for replication/cloning
+
+## Customization
+
+To adapt these examples:
+
+1. **Change target resources**: Modify `labelSelectors` in mappings
+2. **Adjust permissions**: Update RBAC rules based on script requirements  
+3. **Use custom scripts**: Change `sources[].location` to your script repository
+4. **Configure namespaces**: Set target namespaces in resource annotations
+
+## External Resources
+
+- [NuOperator CRD Reference](../api/CRD.md)
+- [Script Development Guide](../SCRIPT-DEVELOPMENT.md)
+- [Deployment Guide](../DEPLOYMENT.md)
