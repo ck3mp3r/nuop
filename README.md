@@ -74,111 +74,37 @@ The manager operator watches for `NuOperator` custom resources and creates manag
 
 When a `NuOperator` CR is created or updated, the manager provisions or updates the corresponding managed operator deployment. The managed operators then watch for their mapped resources and execute the corresponding Nushell scripts for reconciliation.
 
-## Development
-
-### Prerequisites
-
-- **Nix**: Install Nix with flakes support ([Determinate Systems installer](https://install.determinate.systems/) recommended)
-- **direnv**: Install direnv for automatic environment activation ([installation guide](https://direnv.net/docs/installation.html))
-
-### Quick Start
-
-1. **Clone and enter the repository**:
-   ```bash
-   git clone https://github.com/ck3mp3r/nuop.git
-   cd nuop
-   direnv allow  # Automatically activates development environment
-   ```
-
-2. **Verify setup**:
-   ```bash
-   # Check tools are available
-   cargo --version
-   nu --version
-   kind --version
-   
-   # Run tests
-   op-tests
-   ```
-
-3. **Start local Kubernetes cluster**:
-   ```bash
-   kind-start  # Creates local cluster with proper configuration
-   ```
-
-### Development Environment
-
-The project uses [devenv](https://devenv.sh/) for reproducible development environments with two configurations:
-
-- **Default shell** (`nix develop`): Full development environment with all tools
-- **CI shell** (`nix develop .#ci`): Minimal environment for testing only
-
-#### Available Tools & Scripts
-
-| Command | Description |
-|---------|-------------|
-| `op-build` | Build the operator binary |
-| `op-tests` | Run all tests including integration tests |
-| `op-coverage` | Generate code coverage report |
-| `op-clippy` | Run Rust linter |
-| `op-fmt` | Format Rust code |
-| `kind-start` | Start local Kubernetes cluster |
-| `op-run-standard` | Run operator in standard mode locally |
-| `op-run-manager` | Run operator in manager mode locally |
-| `op-run-managed` | Run operator in managed mode locally |
-
-#### Manual Environment Setup
-
-If you prefer not to use direnv:
+## Quick Start
 
 ```bash
-# Enter development shell manually
-nix develop --no-pure-eval
+# Clone and setup development environment
+git clone https://github.com/ck3mp3r/nuop.git
+cd nuop
+direnv allow  # Activates development environment
 
-# Or use the minimal CI shell
-nix develop .#ci --no-pure-eval
-```
-
-### Building and Testing
-
-```bash
-# Build the operator
-op-build
-
-# Run all tests (includes script execution tests)
+# Verify setup and run tests
 op-tests
 
-# Run specific test modules
-cargo test --manifest-path operator/Cargo.toml config
-cargo test --manifest-path operator/Cargo.toml --lib standard
-
-# Generate coverage report
-op-coverage
+# Start local Kubernetes cluster
+kind-start
 ```
 
-### Local Development Workflow
+## Documentation
 
-1. **Start local cluster**: `kind-start`
-2. **Make code changes** in `operator/src/`
-3. **Test changes**: `op-tests`
-4. **Build container**: `op-build` 
-5. **Deploy locally**: Apply example configurations to test
+📚 **[Complete Documentation](docs/README.md)** - Documentation index and guides
 
-### Nix Flake Structure
+### Quick Links
+- **[Development Setup](docs/DEVELOPMENT.md)** - Environment setup and workflow
+- **[Script Development](docs/SCRIPT-DEVELOPMENT.md)** - Complete guide to writing operator scripts  
+- **[Examples](examples/README.md)** - Sample configurations and use cases
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Debugging and common issues
+- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines
 
-The project provides multiple development shells:
+### For Script Developers
+- **[Script Development Guide](docs/SCRIPT-DEVELOPMENT.md)** - Step-by-step tutorial
+- **[Example Scripts](operator/scripts/README.md)** - Working implementations  
+- **[Script API Reference](docs/SCRIPT-DEVELOPMENT.md#script-api-reference)** - Functions and interfaces
 
-```bash
-# Full development environment (default)
-nix develop
+## Contributing
 
-# Minimal CI environment (faster, fewer dependencies)  
-nix develop .#ci
-
-# Show all available outputs
-nix flake show
-```
-
-### Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on code style, testing, and submitting pull requests.
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for development setup, coding standards, and submission process.
