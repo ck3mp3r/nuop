@@ -135,18 +135,8 @@ spec:
           capabilities:
             drop:
             - ALL
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
+        # Note: Health endpoints not yet implemented
+        # livenessProbe and readinessProbe will be added in future versions
 ```
 
 ## Manager + Managed Mode Deployment
@@ -364,46 +354,30 @@ env:
 
 ### 2. Metrics Collection
 
-If using Prometheus:
+Prometheus metrics are planned for future versions. Currently, monitoring relies on:
+- Pod resource usage via `kubectl top`
+- Log analysis for reconciliation patterns
+- Kubernetes events for operator activity
 
 ```yaml
-# ServiceMonitor for Prometheus Operator
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: your-operator
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: your-operator
-  endpoints:
-  - port: metrics
-    interval: 30s
-    path: /metrics
+# Metrics endpoints will be available in future versions
+# ServiceMonitor configuration will be documented then
 ```
 
 ### 3. Health Checks
 
-Implement proper health checks:
+Health endpoints are planned for future versions. Currently, the operator will restart if it crashes, but proper health checks are not yet implemented.
 
 ```yaml
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 8080
-  initialDelaySeconds: 30
-  periodSeconds: 30
-  timeoutSeconds: 5
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: 8080
-  initialDelaySeconds: 5
-  periodSeconds: 10
-  timeoutSeconds: 3
-  failureThreshold: 3
+# Health checks will be available in future versions
+# livenessProbe:
+#   httpGet:
+#     path: /health
+#     port: 8080
+# readinessProbe:
+#   httpGet:
+#     path: /ready  
+#     port: 8080
 ```
 
 ## High Availability
@@ -424,18 +398,13 @@ affinity:
         topologyKey: topology.kubernetes.io/zone
 ```
 
-### 2. Leader Election
+### 2. Multiple Replicas
 
-For operators that need coordination:
+Currently, nuop operators should run with `replicas: 1` to avoid conflicts. Future versions may include leader election for high availability.
 
 ```yaml
-env:
-- name: ENABLE_LEADER_ELECTION
-  value: "true"
-- name: LEADER_ELECTION_NAMESPACE
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.namespace
+spec:
+  replicas: 1  # Only run one instance to prevent conflicts
 ```
 
 ## Backup and Disaster Recovery
