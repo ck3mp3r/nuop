@@ -65,7 +65,7 @@ def delete-replicated-configs [configmap_name, source_namespace] {
 
 # Gets the target namespaces based on annotations
 def get-target-namespaces [original, source_namespace] {
-  let annotations = ($original.metadata.annotations | default {})
+  let annotations = ($original.metadata | get --optional annotations | default {})
 
   # Get all available namespaces first
   let all_namespaces = (
