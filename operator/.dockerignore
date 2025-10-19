@@ -1,0 +1,12 @@
+.git/
+.github/
+docs/
+kind/
+.devenv/
+.direnv/
+*.md
+.gitignore
+.pre-commit-config.yaml
+target/
+result
+result-*
