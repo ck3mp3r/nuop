@@ -9,7 +9,7 @@ RUN nix \
   --option filter-syscalls false \
   build
 
-FROM ghcr.io/nushell/nushell:0.104.1-alpine AS final
+FROM ghcr.io/nushell/nushell:0.108.0-alpine AS final
 
 USER root
 RUN apk add \
