@@ -13,10 +13,11 @@ spec:
       value: production
   mappings:
     - name: pod-watcher
+      group: ""
       version: v1
       kind: Pod
   sources:
-    - location: https://github.com/example/scripts.git
+     - location: https://github.com/example/scripts.git
       path: /scripts
 ---
 apiVersion: v1

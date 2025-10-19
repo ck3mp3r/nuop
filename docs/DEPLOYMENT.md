@@ -181,7 +181,8 @@ spec:
 ### 2. Install CRDs
 
 ```bash
-kubectl apply -f https://github.com/ck3mp3r/nuop/releases/latest/download/crds.yaml
+# Apply CRDs from the repository
+kubectl apply -f operator/chart/crds/nuop.yaml
 ```
 
 ### 3. Create NuOperator Resources

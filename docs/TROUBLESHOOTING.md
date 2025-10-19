@@ -148,13 +148,17 @@ RUST_LOG=debug kubectl logs -l app.kubernetes.io/name=nuop -f
 
 **Problem**: Invalid JSON output
 ```bash
-# Test script output format
-echo '{}' | nu operator/scripts/your-script/mod.nu reconcile | jq .
+# Test script output format (scripts should only output via print statements)
+echo 'apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+  namespace: default' | nu operator/scripts/your-script/mod.nu reconcile
 
 # Common issues:
-# - Extra print statements in reconcile function
-# - Invalid JSON structure
-# - Missing JSON output
+# - Scripts should use kubectl commands, not JSON output
+# - Print statements are for logging only
+# - Exit codes indicate success (0=no change, 2=changed)
 # - Wrong exit codes
 ```
 
@@ -216,7 +220,7 @@ kubectl logs -l app.kubernetes.io/name=nuop | grep -E "(processing|reconcile)"
 **Problem**: Slow response to resource changes
 ```bash
 # Check requeue intervals in script config
-echo '{}' | nu operator/scripts/your-script/mod.nu config | jq .requeueAfterSeconds
+echo '{}' | nu operator/scripts/your-script/mod.nu config
 
 # Monitor reconciliation timing
 kubectl logs -l app.kubernetes.io/name=nuop | grep -E "reconcile.*took"

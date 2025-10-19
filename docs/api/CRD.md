@@ -95,7 +95,7 @@ Defines where to fetch Nushell scripts from. Each source represents a location c
 spec:
   sources:
     # Public Git repository
-    - location: https://github.com/ck3mp3r/nuop-scripts.git?ref=v1.0.0&dir=operators
+    - location: https://github.com/your-org/operator-scripts.git?ref=v1.0.0&dir=operators
       path: /scripts/public
     
     # Private repository with authentication  

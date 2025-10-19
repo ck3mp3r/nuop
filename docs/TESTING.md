@@ -27,10 +27,10 @@ Test each script function independently:
 echo '{}' | nu operator/scripts/my-operator/mod.nu config
 
 # Test reconcile with sample data
-cat test-data/configmap.json | nu operator/scripts/my-operator/mod.nu reconcile
+cat test-data/configmap.yaml | nu operator/scripts/my-operator/mod.nu reconcile
 
 # Test finalize with deletion scenario
-cat test-data/deleting-configmap.json | nu operator/scripts/my-operator/mod.nu finalize
+cat test-data/deleting-configmap.yaml | nu operator/scripts/my-operator/mod.nu finalize
 ```
 
 ### Creating Test Data
@@ -90,7 +90,7 @@ Create a test script for automated validation:
 # Test script configuration
 def test_config [script_path: string] {
     print $"Testing config for ($script_path)"
-    let result = (echo '{}' | nu $"($script_path)/mod.nu" config | from json)
+    let result = (echo '{}' | nu $"($script_path)/mod.nu" config | from yaml)
     
     # Validate required fields
     if ($result.name | is-empty) {
@@ -570,7 +570,7 @@ def assert_equal [actual: any, expected: any, message: string] {
 
 # Test example usage
 def test_script_output [] {
-    let result = (echo '{}' | nu operator/scripts/my-operator/mod.nu config | from json)
+    let result = (echo '{}' | nu operator/scripts/my-operator/mod.nu config | from yaml)
     assert_equal $result.name "my-operator" "Script name should match"
     assert_equal $result.kind "ConfigMap" "Should watch ConfigMaps"
 }
@@ -619,7 +619,7 @@ op-tests                    # Run Rust unit/integration tests
 echo '{}' | RUST_LOG=debug nu operator/scripts/my-operator/mod.nu config
 
 # Test with different input data
-cat test-data/edge-case.json | nu operator/scripts/my-operator/mod.nu reconcile
+cat test-data/edge-case.yaml | nu operator/scripts/my-operator/mod.nu reconcile
 ```
 
 ### Operator Debugging

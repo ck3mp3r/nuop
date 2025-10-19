@@ -44,12 +44,16 @@ cd operator/scripts/my-operator
 def "main config" [] {
     {
         name: "my-operator",
-        kind: "ConfigMap",          # Kubernetes resource kind to watch
+        group: "",                  # API group (empty for core resources)
         version: "v1",              # API version of the resource
+        kind: "ConfigMap",          # Kubernetes resource kind to watch
         labelSelectors: {           # Optional: filter resources by labels
             "app.kubernetes.io/managed-by": "my-operator"
         },
+        fieldSelectors: {},         # Optional: filter resources by fields
         finalizer: "my-operator.example.com/finalizer",
+        namespace: null,            # Optional: limit to specific namespace
+        requeue_after_change: 10,   # Requeue interval after changes (seconds)
         requeue_after_noop: 300     # Requeue interval when no changes (seconds)
     } | to yaml
 }
@@ -101,21 +105,16 @@ def "main finalize" [] {
 # Test configuration
 echo '{}' | nu operator/scripts/my-operator/mod.nu config
 
-# Test reconcile with sample resource
-echo '{
-  "apiVersion": "v1",
-  "kind": "ConfigMap", 
-  "metadata": {
-    "name": "test-cm",
-    "namespace": "default",
-    "labels": {
-      "app.kubernetes.io/managed-by": "my-operator"
-    }
-  },
-  "data": {
-    "key": "value"
-  }
-}' | nu operator/scripts/my-operator/mod.nu reconcile
+# Test reconcile with sample resource (YAML format)
+echo 'apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+  labels:
+    app.kubernetes.io/managed-by: my-operator
+data:
+  key: value' | nu operator/scripts/my-operator/mod.nu reconcile
 ```
 
 ## Script API Reference
