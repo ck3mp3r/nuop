@@ -44,7 +44,9 @@ impl CommandExecutor for ProcessExecutor {
         let input = input.to_string();
 
         task::spawn_blocking(move || {
-            let mut child = Command::new(&script)
+            let mut child = Command::new("nu")
+                .arg("--stdin")
+                .arg(&script)
                 .arg(&command)
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
@@ -82,11 +84,17 @@ impl CommandExecutor for ProcessExecutor {
 
             let status = child.wait()?;
             let exit_code = status.code().unwrap_or(1);
+            let stderr_output = stderr_lines.join("\n");
+
+            // Check if this is a file not found error, which should be treated as infrastructure error
+            if exit_code != 0 && stderr_output.contains("nu::shell::io::file_not_found") {
+                return Err(anyhow::anyhow!("Script file not found: {}", stderr_output));
+            }
 
             Ok(CommandResult {
                 exit_code,
                 stdout: stdout_lines.join("\n"),
-                stderr: stderr_lines.join("\n"),
+                stderr: stderr_output,
             })
         })
         .await?

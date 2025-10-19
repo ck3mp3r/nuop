@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the secret controller
 def 'main config' [] {

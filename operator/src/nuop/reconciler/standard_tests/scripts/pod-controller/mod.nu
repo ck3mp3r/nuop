@@ -1,4 +1,3 @@
-#!/usr/bin/env nu
 
 # Get configuration for the pod controller
 def 'main config' [] {

@@ -85,14 +85,17 @@ fn create_test_object(
 
 fn get_test_script_path(script_name: &str) -> PathBuf {
     PathBuf::from(format!(
-        "src/nuop/reconciler/controller_tests/scripts/{script_name}.nu",
+        "src/nuop/reconciler/controller_tests/scripts/{script_name}/mod.nu",
     ))
 }
 
 // Helper function to check if we should skip script execution tests
-// Skip if /usr/bin/nu doesn't exist (local development environment)
+// Skip if nu command is not available in PATH
 fn should_skip_script_tests() -> bool {
-    !std::path::Path::new("/usr/bin/nu").exists()
+    std::process::Command::new("nu")
+        .arg("--version")
+        .output()
+        .is_err()
 }
 
 #[tokio::test]
@@ -146,7 +149,6 @@ async fn test_reconcile_needs_finalizer() {
 }
 
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_reconcile_active_no_changes() {
     if should_skip_script_tests() {
         return;
@@ -176,7 +178,6 @@ async fn test_reconcile_active_no_changes() {
 }
 
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_reconcile_active_with_changes() {
     if should_skip_script_tests() {
         return;
@@ -206,7 +207,6 @@ async fn test_reconcile_active_with_changes() {
 }
 
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_reconcile_finalizing() {
     if should_skip_script_tests() {
         return;
@@ -255,7 +255,6 @@ async fn test_reconcile_finalizing() {
 }
 
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_reconcile_script_error() {
     if should_skip_script_tests() {
         return;
@@ -292,7 +291,6 @@ async fn test_reconcile_script_error() {
 }
 
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_reconcile_no_finalizer_config() {
     if should_skip_script_tests() {
         return;
@@ -441,7 +439,6 @@ async fn test_api_error_handling() {
 
 // Comprehensive test that covers multiple edge cases and error scenarios
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_comprehensive_reconcile_scenarios() {
     if should_skip_script_tests() {
         return;
@@ -497,7 +494,7 @@ async fn test_comprehensive_reconcile_scenarios() {
             assert_eq!(error_response.code, 500);
             assert_eq!(error_response.message, "Failed to execute script");
         } else {
-            panic!("Expected API error for script spawn failure");
+            panic!("Expected API error for script not found");
         }
     }
 
@@ -681,7 +678,6 @@ async fn test_api_failure_scenarios() {
 
 // Test edge cases with script execution
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_script_execution_edge_cases() {
     if should_skip_script_tests() {
         return;
@@ -748,7 +744,6 @@ async fn test_script_execution_edge_cases() {
 
 // Test configuration variations
 #[tokio::test]
-#[ignore = "requires /usr/bin/nu - use 'cargo test -- --ignored' in CI"]
 async fn test_configuration_variations() {
     if should_skip_script_tests() {
         return;

@@ -1,16 +1,15 @@
-#!/usr/bin/env nu
 
-# Get configuration for the deployment script
+# Get configuration for the service script
 def 'main config' [] {
   {
-    name: "deployment-script"
-    group: "apps"
+    name: "service-script"
+    group: ""
     version: "v1"
-    kind: "Deployment"
+    kind: "Service"
     labelSelectors: {}
     fieldSelectors: {}
-    requeue_after_change: 15
-    requeue_after_noop: 600
+    requeue_after_change: 10
+    requeue_after_noop: 300
   } | to yaml
 }
 

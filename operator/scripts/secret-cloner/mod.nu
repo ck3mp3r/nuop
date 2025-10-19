@@ -1,13 +1,11 @@
-#!/usr/bin/nu --stdin
-
 # Finalizer identifier
+const FINALIZER = "github.com/ck3mp3r-nuop-sec-clnr-finalizer"
 
-const FINALIZER = "github.com/ck3mp3r-nuop-cfg-repktr-finalizer"
 # Returns operator config
 def 'main config' [] {
   {
-    name: "config-replicator"
-    kind: "ConfigMap"
+    name: "secret-cloner"
+    kind: "Secret"
     labelSelectors: {
       "app.kubernetes.io/replicate": "yes"
     }
@@ -17,22 +15,23 @@ def 'main config' [] {
   } | to yaml
 }
 
-# Extracts only the relevant fields of a configmap for comparison
-def simplify-config [configpmap] {
-  let labels = ($configpmap.metadata.labels | default {})
+# Extracts only the relevant fields of a Secret for comparison
+def simplify-secret [secret] {
+  let labels = ($secret.metadata.labels | default {})
   let simplified_labels = if ($labels | columns | any {|c| $c == 'app.kubernetes.io/replicated-by' }) {
-    {"app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"}
+    {"app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-sec-clnr"}
   } else {
     {}
   }
 
   {
-    data: $configpmap.data
+    type: $secret.type
+    data: $secret.data
     labels: $simplified_labels
   }
 }
 
-# Builds the replicated configmap template
+# Builds the replicated secret template
 def build-template [original] {
   {
     apiVersion: $original.apiVersion
@@ -40,16 +39,17 @@ def build-template [original] {
     metadata: {
       name: $original.metadata.name
       labels: {
-        "app.kubernetes.io/managed-by": "github.com-ck3mp3r-nuop-cfg-repktr"
-        "app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-cfg-repktr"
+        "app.kubernetes.io/managed-by": "github.com-ck3mp3r-nuop-sec-clnr"
+        "app.kubernetes.io/replicated-by": "github.com-ck3mp3r-nuop-sec-clnr"
       }
     }
+    type: $original.type
     data: $original.data
   }
 }
 
-# Deletes all replicated configpmaps in other namespaces
-def delete-replicated-configs [configmap_name, source_namespace] {
+# Deletes all replicated secrets in other namespaces
+def delete-replicated-secrets [secret_name, source_namespace] {
   let namespaces = (
     kubectl get namespaces -o json | from json
   ).items
@@ -57,17 +57,17 @@ def delete-replicated-configs [configmap_name, source_namespace] {
   | where {|ns| $ns != $source_namespace }
 
   for namespace in $namespaces {
-    let result = (kubectl get configmap $configmap_name -n $namespace -o yaml | complete)
+    let result = (kubectl get secret $secret_name -n $namespace -o yaml | complete)
     if $result.exit_code == 0 {
-      print $"❌ Deleting replicated configmap in ($namespace)"
-      kubectl delete configmap $configmap_name -n $namespace | complete | ignore
+      print $"❌ Deleting replicated secret in ($namespace)"
+      kubectl delete secret $secret_name -n $namespace | complete | ignore
     }
   }
 }
 
 # Gets the target namespaces based on annotations
 def get-target-namespaces [original, source_namespace] {
-  let annotations = ($original.metadata.annotations | default {})
+  let annotations = ($original.metadata | get --optional annotations | default {})
 
   # Get all available namespaces first
   let all_namespaces = (
@@ -113,53 +113,52 @@ def get-target-namespaces [original, source_namespace] {
     exit 1
   }
 }
-
 # Reconciliation logic for create/update events
 def handle-reconcile [parsed] {
   mut changed = false
 
   let source_namespace = $parsed.metadata.namespace
-  let configmap_name = $parsed.metadata.name
+  let secret_name = $parsed.metadata.name
 
-  let original_result = (kubectl get configmap $configmap_name -n $source_namespace -o yaml | complete)
+  let original_result = (kubectl get secret $secret_name -n $source_namespace -o yaml | complete)
   if $original_result.exit_code != 0 {
-    print $"⚠️ Source configmap ($configmap_name) in ($source_namespace) not found — skipping reconcile"
+    print $"⚠️ Source secret ($secret_name) in ($source_namespace) not found — skipping reconcile"
     exit 0
   }
 
   let original = $original_result.stdout | from yaml
 
   let template = build-template $original
-  let source_simplified = simplify-config $template
+  let source_simplified = simplify-secret $template
 
   let namespaces = get-target-namespaces $original $source_namespace
 
   for namespace in $namespaces {
     print $"🔍 Checking namespace: ($namespace)"
 
-    let result = (kubectl get configmap $configmap_name -n $namespace -o yaml | complete)
-    let existing_configmap = if $result.exit_code == 0 {
+    let result = (kubectl get secret $secret_name -n $namespace -o yaml | complete)
+    let existing_secret = if $result.exit_code == 0 {
       $result.stdout | from yaml
     } else {
       null
     }
 
-    let existing_simplified = if $existing_configmap != null {
-      simplify-config $existing_configmap
+    let existing_simplified = if $existing_secret != null {
+      simplify-secret $existing_secret
     } else {
       null
     }
 
     if $existing_simplified == null {
-      print $"➕ Creating configpmap in ($namespace)"
+      print $"➕ Creating secret in ($namespace)"
       ($template | to yaml) | kubectl apply -n $namespace -f -
       $changed = true
     } else if $existing_simplified != $source_simplified {
-      print $"🔄 Updating configpmap in ($namespace)"
+      print $"🔄 Updating secret in ($namespace)"
       ($template | to yaml) | kubectl apply -n $namespace -f -
       $changed = true
     } else {
-      print $"✅ configpmap in ($namespace) is up to date"
+      print $"✅ Secret in ($namespace) is up to date"
     }
   }
 
@@ -170,13 +169,13 @@ def handle-reconcile [parsed] {
   }
 }
 
-# Handles deletion of the source configpmap by cleaning up replicas and removing the finalizer
+# Handles deletion of the source secret by cleaning up replicas and removing the finalizer
 def handle-deleted [parsed] {
   let source_namespace = $parsed.metadata.namespace
-  let configmap_name = $parsed.metadata.name
+  let secret_name = $parsed.metadata.name
 
-  print "🗑 Detected source configmap deletion. Cleaning up replicas..."
-  delete-replicated-configs $configmap_name $source_namespace
+  print "🗑 Detected source secret deletion. Cleaning up replicas..."
+  delete-replicated-secrets $secret_name $source_namespace
 
   exit 0
 }

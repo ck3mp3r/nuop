@@ -1,12 +1,11 @@
-#!/usr/bin/env nu
 
-# Get configuration for the service script
+# Get configuration for the duplicate script
 def 'main config' [] {
   {
-    name: "service-script"
-    group: ""
+    name: "duplicate-script"
+    group: "apps"
     version: "v1"
-    kind: "Service"
+    kind: "Deployment"
     labelSelectors: {}
     fieldSelectors: {}
     requeue_after_change: 10

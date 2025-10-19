@@ -1,4 +1,3 @@
-#!/usr/bin/nu --stdin
 
 # Get configuration for the test controller - custom requeue times
 def 'main config' [] {

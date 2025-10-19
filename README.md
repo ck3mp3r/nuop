@@ -10,7 +10,7 @@ The Nushell Operator (nuop) is a Kubernetes operator that enables you to build c
 
 ## Key Features
 
-- **Script-based Controllers**: Define Kubernetes controllers using Nushell scripts, or any executable scripts for that matter.
+- **Script-based Controllers**: Define Kubernetes controllers using Nushell scripts in a modular directory structure.
 - **Dynamic Source Management**: Fetch reconciliation scripts from various sources (Git repositories, etc.)
 - **Flexible Resource Mapping**: Configure which Kubernetes resources trigger which scripts using field and label selectors
 - **Environment Configuration**: Supply environment variables and credentials for your scripts
@@ -64,7 +64,7 @@ The Manager and Managed modes work together as a two-tier system for dynamic con
 ## How it Works
 
 ### Standard Mode
-Scripts are bundled directly into container images and automatically discovered based on their metadata. Each script defines its target Kubernetes resource kind and reconciliation logic.
+Scripts are organized in directories with `mod.nu` entry points, bundled directly into container images and automatically discovered based on their metadata. Each script directory defines its target Kubernetes resource kind and reconciliation logic.
 
 ### Manager + Managed Mode
 The manager operator watches for `NuOperator` custom resources and creates managed operator deployments. Each `NuOperator` CR defines:

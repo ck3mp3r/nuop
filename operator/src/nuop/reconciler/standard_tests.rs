@@ -17,18 +17,18 @@ fn create_test_client() -> Client {
 
 fn get_test_scripts() -> Vec<PathBuf> {
     vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/configmap-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/configmap-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller/mod.nu"),
     ]
 }
 
 fn get_duplicate_scripts() -> Vec<PathBuf> {
     vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller.nu"), // Same kind as pod-controller
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller/mod.nu"), // Same kind as pod-controller
     ]
 }
 
@@ -69,9 +69,11 @@ async fn test_with_invalid_script_config() {
     let client = create_test_client();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller.nu"), // Returns invalid config
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"),
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Returns invalid config
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"),
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -90,9 +92,9 @@ async fn test_with_nonexistent_script() {
     let client = create_test_client();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"),
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/nonexistent-controller.nu"), // Doesn't exist
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"),
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/nonexistent-controller/mod.nu"), // Doesn't exist
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"),
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -122,11 +124,13 @@ async fn test_mixed_valid_and_invalid_scripts() {
     let client = create_test_client();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller.nu"), // Invalid config
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/nonexistent-controller.nu"), // Doesn't exist
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"), // Valid
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Valid
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Invalid config
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Valid
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/nonexistent-controller/mod.nu"), // Doesn't exist
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // Valid
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -145,9 +149,9 @@ async fn test_multiple_duplicates_same_kind() {
     let client = create_test_client();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Pod kind
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller.nu"), // Also Pod kind
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"), // Deployment kind
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Pod kind
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller/mod.nu"), // Also Pod kind
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Deployment kind
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -165,7 +169,7 @@ async fn test_multiple_duplicates_same_kind() {
 async fn test_controller_task_spawning() {
     let client = create_test_client();
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/standard_tests/scripts/pod-controller.nu",
+        "src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu",
     )];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -187,11 +191,11 @@ async fn test_different_resource_kinds() {
 
     // Test with various Kubernetes resource kinds
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Core/v1 Pod
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"), // apps/v1 Deployment
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"), // Core/v1 Service
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/configmap-controller.nu"), // Core/v1 ConfigMap
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller.nu"), // Core/v1 Secret
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Core/v1 Pod
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // apps/v1 Deployment
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // Core/v1 Service
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/configmap-controller/mod.nu"), // Core/v1 ConfigMap
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller/mod.nu"), // Core/v1 Secret
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -216,10 +220,10 @@ async fn test_kind_deduplication_logic() {
 
     // Create multiple scripts with same kind but different configs
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Pod - should be accepted (first)
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"), // Deployment - should be accepted
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller.nu"), // Pod - should be rejected (duplicate)
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"), // Service - should be accepted
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Pod - should be accepted (first)
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Deployment - should be accepted
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/duplicate-pod-controller/mod.nu"), // Pod - should be rejected (duplicate)
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // Service - should be accepted
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -239,9 +243,9 @@ async fn test_script_config_variations() {
 
     // Test scripts with different configurations (finalizers, namespaces, selectors)
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Has finalizer, namespace, selectors
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"), // No finalizer, no namespace, no selectors
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller.nu"), // Has finalizer and namespace
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Has finalizer, namespace, selectors
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // No finalizer, no namespace, no selectors
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/secret-controller/mod.nu"), // Has finalizer and namespace
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -261,12 +265,14 @@ async fn test_error_resilience() {
 
     // Mix of valid scripts, invalid configs, and missing files
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/invalid-config-controller.nu"), // Invalid config
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/missing-file.nu"), // Missing file
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller.nu"), // Valid
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/another-missing.nu"), // Another missing file
-        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller.nu"), // Valid
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu"), // Valid
+        PathBuf::from(
+            "src/nuop/reconciler/standard_tests/scripts/invalid-config-controller/mod.nu",
+        ), // Invalid config
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/missing-file/mod.nu"), // Missing file
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/deployment-controller/mod.nu"), // Valid
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/another-missing/mod.nu"), // Another missing file
+        PathBuf::from("src/nuop/reconciler/standard_tests/scripts/service-controller/mod.nu"), // Valid
     ];
 
     let controllers = get_standard_controllers(&client, &scripts);
@@ -289,7 +295,7 @@ async fn test_error_resilience() {
 async fn test_single_script() {
     let client = create_test_client();
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/standard_tests/scripts/pod-controller.nu",
+        "src/nuop/reconciler/standard_tests/scripts/pod-controller/mod.nu",
     )];
 
     let controllers = get_standard_controllers(&client, &scripts);
