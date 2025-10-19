@@ -49,7 +49,7 @@ Thank you for your interest in contributing to the Nushell Operator! This guide 
 
 3. **Test locally with Kind**:
    ```bash
-   kind-start        # Start local Kubernetes cluster
+   op-tests          # Run tests
    op-build          # Build operator
    # Apply test configurations and verify functionality
    ```
@@ -116,7 +116,7 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 1. **Start local cluster**:
    ```bash
-   kind-start
+   op-tests
    ```
 
 2. **Build and load image**:
@@ -203,7 +203,7 @@ operator/
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
 | `op-crds` | Generate CRD manifests |
-| `kind-start` | Start local K8s cluster |
+
 | `op-run-*` | Run operator in different modes |
 
 ### Development Shells
@@ -214,7 +214,7 @@ operator/
 ### Troubleshooting Development Issues
 
 - **Nix/direnv issues**: Try `direnv reload` or restart your shell
-- **Test failures**: Check that `kind-start` has been run for integration tests
+- **Test failures**: Ensure you've run `op-tests` in the development environment
 - **Build issues**: Ensure you're in the development shell (`direnv status`)
 
 ## Getting Help

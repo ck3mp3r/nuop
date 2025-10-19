@@ -119,6 +119,31 @@ operator/
 └── nix/               # Nix build configuration
 ```
 
+## Troubleshooting
+
+### Script Issues
+
+**Test scripts locally:**
+```bash
+# Test script configuration
+echo '{}' | nu operator/scripts/your-script/mod.nu config
+
+# Test with sample resource
+cat test-resource.yaml | nu operator/scripts/your-script/mod.nu reconcile
+```
+
+**Common script errors:**
+- **"Script not found"** - Ensure `mod.nu` exists in script directory
+- **"Invalid configuration"** - Check script config returns all required fields (name, group, version, kind)
+- **Exit code issues** - Scripts should exit 0 (no changes) or 2 (changes made)
+
+### General Kubernetes Troubleshooting
+
+For general Kubernetes debugging, see:
+- [Kubernetes Troubleshooting Guide](https://kubernetes.io/docs/tasks/debug/)
+- [Debugging Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)
+- [Debugging Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)
+
 ## Contributing
 
 See [Contributing Guidelines](CONTRIBUTING.md) for detailed information on code style, testing, and submitting pull requests.

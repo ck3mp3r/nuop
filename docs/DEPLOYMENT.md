@@ -1,6 +1,6 @@
-# Production Deployment Guide
+# Deployment Guide
 
-This guide covers best practices for deploying the Nushell Operator in production environments.
+This guide covers deploying the Nushell Operator in production environments, focusing on nuop-specific deployment modes and script permissions.
 
 ## Deployment Modes
 
@@ -33,6 +33,8 @@ Deploy a manager that dynamically provisions operators based on `NuOperator` cus
 
 ### 1. Create Custom Operator Image
 
+Bundle your scripts into a custom container image:
+
 ```dockerfile
 # Dockerfile
 FROM ghcr.io/ck3mp3r/nuop:latest
@@ -40,55 +42,107 @@ FROM ghcr.io/ck3mp3r/nuop:latest
 # Copy your operator scripts
 COPY scripts/ /scripts/
 
-# Optional: Add any additional dependencies
-# RUN apk add --no-cache curl jq
+# Scripts will be automatically discovered and registered
 ```
 
 Build and push your image:
+
 ```bash
 docker build -t your-registry/your-operator:v1.0.0 .
 docker push your-registry/your-operator:v1.0.0
 ```
 
-### 2. Create RBAC Resources
+### 2. Configure RBAC for Script Permissions
+
+Create RBAC resources that grant your scripts the necessary permissions to manage Kubernetes resources.
+
+**Example: ConfigMap Replicator Script**
+
+If your script manages ConfigMaps and needs to read Namespaces:
 
 ```yaml
 # rbac.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: your-operator
+  name: configmap-replicator
   namespace: your-namespace
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: your-operator
+  name: configmap-replicator
 rules:
-# Add permissions for resources your scripts manage
+# Permissions for ConfigMap operations
 - apiGroups: [""]
-  resources: ["configmaps", "secrets"]
+  resources: ["configmaps"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Read access to namespaces (for replication targets)
 - apiGroups: [""]
   resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
-# Add any additional permissions needed
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: your-operator
+  name: configmap-replicator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: your-operator
+  name: configmap-replicator
 subjects:
 - kind: ServiceAccount
-  name: your-operator
+  name: configmap-replicator
   namespace: your-namespace
 ```
 
+**Example: Secret Cloner Script**
+
+If your script manages Secrets:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secret-cloner
+rules:
+# Permissions for Secret operations
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Read access to namespaces
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+```
+
+**Example: Multi-Resource Operator**
+
+If your script manages multiple resource types:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: multi-resource-operator
+rules:
+# Core resources
+- apiGroups: [""]
+  resources: ["configmaps", "secrets", "services"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Apps resources
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+# Networking resources
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+```
+
 ### 3. Deploy Operator
+
+Deploy your operator with the custom image:
 
 ```yaml
 # deployment.yaml
@@ -97,54 +151,42 @@ kind: Deployment
 metadata:
   name: your-operator
   namespace: your-namespace
-  labels:
-    app.kubernetes.io/name: your-operator
-    app.kubernetes.io/version: v1.0.0
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: your-operator
+      app: your-operator
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: your-operator
+        app: your-operator
     spec:
-      serviceAccountName: your-operator
+      serviceAccountName: your-operator-sa
       containers:
       - name: operator
         image: your-registry/your-operator:v1.0.0
         env:
         - name: RUST_LOG
           value: info
-        - name: NUOP_MODE
-          value: standard
         - name: NUOP_SCRIPT_PATH
           value: /scripts
         resources:
           requests:
-            memory: 64Mi
-            cpu: 100m
+            memory: "64Mi"
+            cpu: "250m"
           limits:
-            memory: 256Mi
-            cpu: 500m
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsNonRoot: true
-          runAsUser: 1000
-          capabilities:
-            drop:
-            - ALL
-        # Note: Health endpoints not yet implemented
-        # livenessProbe and readinessProbe will be added in future versions
+            memory: "128Mi"
+            cpu: "500m"
 ```
 
 ## Manager + Managed Mode Deployment
 
 ### 1. Deploy Manager
 
+Deploy the nuop manager:
+
 ```yaml
-# manager-deployment.yaml
+# manager.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -169,16 +211,11 @@ spec:
           value: manager
         - name: RUST_LOG
           value: info
-        resources:
-          requests:
-            memory: 128Mi
-            cpu: 100m
-          limits:
-            memory: 512Mi
-            cpu: 1000m
 ```
 
 ### 2. Install CRDs
+
+Apply the NuOperator Custom Resource Definition:
 
 ```bash
 # Apply CRDs from the repository
@@ -187,395 +224,167 @@ kubectl apply -f operator/chart/crds/nuop.yaml
 
 ### 3. Create NuOperator Resources
 
+Define operators using NuOperator custom resources:
+
 ```yaml
-# operators.yaml
+# example-operator.yaml
 apiVersion: kemper.buzz/v1alpha1
 kind: NuOperator
 metadata:
-  name: config-replicator
-  namespace: nuop-system
+  name: example-operator
+  namespace: default
 spec:
-  serviceAccountName: config-replicator
+  serviceAccountName: example-operator-sa
   sources:
-  - location: https://github.com/your-org/operators.git?ref=v1.0.0
-    path: /scripts
+    - location: https://github.com/your-org/operator-scripts.git?ref=main
+      path: /scripts
   mappings:
-  - name: config-replicator
-    kind: ConfigMap
-    version: v1
-    labelSelectors:
-      replicate: "true"
-  env:
-  - name: LOG_LEVEL
-    value: debug
+    - name: configmap-controller
+      group: ""
+      version: v1
+      kind: ConfigMap
+      labelSelectors:
+        app.kubernetes.io/managed-by: example-operator
 ```
 
-## Security Best Practices
+## Script Permission Guidelines
 
-### 1. RBAC Configuration
+### Principle of Least Privilege
 
-**Principle of Least Privilege**: Grant only required permissions.
+Grant scripts only the permissions they need:
 
 ```yaml
-# Example: ConfigMap replicator permissions
+# Good: Specific permissions for ConfigMap management
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# Avoid: Overly broad permissions
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+```
+
+### Common Permission Patterns
+
+**Read-only monitoring scripts:**
+```yaml
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "list", "watch"]
+```
+
+**Resource replication scripts:**
+```yaml
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 - apiGroups: [""]
   resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
-# Do NOT grant "*" permissions unless absolutely necessary
 ```
 
-### 2. Container Security
+**Application deployment scripts:**
+```yaml
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+```
+
+## Performance Tuning
+
+### Requeue Intervals
+
+Optimize requeue intervals in your script configuration:
+
+```nushell
+# In your script's config function
+{
+    name: "my-operator",
+    # ... other config
+    requeue_after_change: 10,   # Requeue 10 seconds after making changes
+    requeue_after_noop: 300     # Requeue 5 minutes when no changes needed
+}
+```
+
+**Guidelines:**
+- Use shorter intervals (10-30s) after changes for quick reconciliation
+- Use longer intervals (5-15 minutes) when no changes are needed
+- Consider resource count and API server load
+
+### Resource Selectors
+
+Use specific selectors to reduce reconciliation load:
+
+```nushell
+{
+    # Target specific resources with labels
+    labelSelectors: {
+        "app.kubernetes.io/managed-by": "my-operator"
+        "environment": "production"
+    },
+    # Or use field selectors for namespace-specific operators
+    fieldSelectors: {
+        "metadata.namespace": "my-namespace"
+    }
+}
+```
+
+### Script Optimization
+
+**Efficient resource checks:**
+```nushell
+# Check if changes are needed before applying
+let existing = (kubectl get configmap $name -n $namespace -o yaml | complete)
+if $existing.exit_code == 0 {
+    let current = ($existing.stdout | from yaml)
+    # Only apply if changes are needed
+    if ($current.data != $desired.data) {
+        # Apply changes
+        exit 2
+    } else {
+        # No changes needed
+        exit 0
+    }
+}
+```
+
+## Security Considerations
+
+### RBAC Best Practices
+
+- Grant scripts only the permissions they need for managed resources
+- Use ServiceAccounts specific to each operator
+- Avoid cluster-admin permissions unless absolutely necessary
+- Regularly audit and review granted permissions
+
+### Container Security
+
+Run containers with minimal privileges:
 
 ```yaml
 securityContext:
   allowPrivilegeEscalation: false
-  runAsNonRoot: true
-  runAsUser: 1000
   readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
   capabilities:
     drop:
     - ALL
 ```
 
-### 3. Network Policies
-
-Restrict network access where possible:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: your-operator-netpol
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: your-operator
-  policyTypes:
-  - Ingress
-  - Egress
-  egress:
-  # Allow Kubernetes API access
-  - to: []
-    ports:
-    - protocol: TCP
-      port: 443
-  # Allow DNS
-  - to: []
-    ports:
-    - protocol: UDP
-      port: 53
-```
-
-### 4. Image Security
-
-- Use specific image tags, not `latest`
-- Scan images for vulnerabilities
-- Use minimal base images
-- Sign container images when possible
-
-```yaml
-image: ghcr.io/ck3mp3r/nuop:v0.2.0  # Specific version
-# NOT: ghcr.io/ck3mp3r/nuop:latest
-```
-
-## Resource Management
-
-### 1. Resource Limits
-
-Set appropriate resource requests and limits:
-
-```yaml
-resources:
-  requests:
-    memory: 64Mi   # Minimum required
-    cpu: 100m      # 0.1 CPU cores
-  limits:
-    memory: 256Mi  # Maximum allowed
-    cpu: 500m      # 0.5 CPU cores
-```
-
-### 2. Horizontal Pod Autoscaling
-
-For high-traffic operators:
-
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: your-operator-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: your-operator
-  minReplicas: 1
-  maxReplicas: 5
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-```
-
-### 3. Pod Disruption Budgets
-
-Ensure availability during updates:
-
-```yaml
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: your-operator-pdb
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: your-operator
-```
-
-## Monitoring and Observability
-
-### 1. Logging Configuration
-
-Configure structured logging:
-
-```yaml
-env:
-- name: RUST_LOG
-  value: info,your_operator=debug
-- name: LOG_FORMAT
-  value: json  # For log aggregation
-```
-
-### 2. Metrics Collection
-
-Prometheus metrics are planned for future versions. Currently, monitoring relies on:
-- Pod resource usage via `kubectl top`
-- Log analysis for reconciliation patterns
-- Kubernetes events for operator activity
-
-```yaml
-# Metrics endpoints will be available in future versions
-# ServiceMonitor configuration will be documented then
-```
-
-### 3. Health Checks
-
-Health endpoints are planned for future versions. Currently, the operator will restart if it crashes, but proper health checks are not yet implemented.
-
-```yaml
-# Health checks will be available in future versions
-# livenessProbe:
-#   httpGet:
-#     path: /health
-#     port: 8080
-# readinessProbe:
-#   httpGet:
-#     path: /ready  
-#     port: 8080
-```
-
-## High Availability
-
-### 1. Multi-Region Deployment
-
-For critical operators, deploy across regions:
-
-```yaml
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 100
-      podAffinityTerm:
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: your-operator
-        topologyKey: topology.kubernetes.io/zone
-```
-
-### 2. Multiple Replicas
-
-Currently, nuop operators should run with `replicas: 1` to avoid conflicts. Future versions may include leader election for high availability.
-
-```yaml
-spec:
-  replicas: 1  # Only run one instance to prevent conflicts
-```
-
-## Backup and Disaster Recovery
-
-### 1. Configuration Backup
-
-Backup your operator configurations:
-
-```bash
-# Backup operator deployments
-kubectl get deployments -l app.kubernetes.io/managed-by=nuop -o yaml > operator-backup.yaml
-
-# Backup NuOperator CRs (for manager mode)
-kubectl get nuoperators -o yaml > nuoperators-backup.yaml
-```
-
-### 2. State Recovery
-
-Most nuop operators are stateless, but ensure:
-- RBAC permissions are restored
-- Dependent resources (ConfigMaps, Secrets) are available
-- Network connectivity is established
-
-## Update Strategies
-
-### 1. Rolling Updates
-
-Configure safe rolling updates:
-
-```yaml
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 0
-    maxSurge: 1
-```
-
-### 2. Blue-Green Deployment
-
-For critical operators:
-
-```bash
-# Deploy new version with different label
-kubectl apply -f operator-v2.yaml
-
-# Verify new version works
-kubectl get pods -l version=v2
-
-# Switch traffic by updating selector
-kubectl patch service your-operator -p '{"spec":{"selector":{"version":"v2"}}}'
-
-# Remove old version
-kubectl delete deployment your-operator-v1
-```
-
-## Performance Tuning
-
-### 1. Requeue Intervals
-
-Optimize requeue timing based on your needs:
-
-```yaml
-mappings:
-- name: frequent-reconcile
-  requeue_after_noop: 30    # 30 seconds for frequent checks
-- name: infrequent-reconcile
-  requeue_after_noop: 3600  # 1 hour for stable resources
-```
-
-### 2. Resource Selectors
-
-Use specific selectors to reduce event volume:
-
-```yaml
-mappings:
-- name: config-replicator
-  labelSelectors:
-    app.kubernetes.io/replicate: "true"
-    environment: production      # More specific
-  # Instead of watching all ConfigMaps
-```
-
-### 3. Script Optimization
-
-- Minimize external API calls in scripts
-- Use efficient data structures
-- Cache frequently accessed data
-- Avoid expensive operations in reconcile loops
-
-## Troubleshooting Production Issues
-
-### 1. Common Issues
-
-**High CPU/Memory Usage**:
-- Check requeue intervals
-- Review script efficiency
-- Monitor event volume
-
-**Failed Reconciliations**:
-- Check RBAC permissions
-- Verify script execution
-- Review resource quotas
-
-**Slow Performance**:
-- Optimize resource selectors
-- Reduce reconciliation frequency
-- Scale horizontally if needed
-
-### 2. Debugging Tools
-
-```bash
-# Check operator logs
-kubectl logs -l app.kubernetes.io/name=your-operator -f
-
-# Monitor resource usage
-kubectl top pods -l app.kubernetes.io/name=your-operator
-
-# Check events
-kubectl get events --sort-by='.lastTimestamp'
-
-# Describe problematic resources
-kubectl describe deployment your-operator
-```
-
-## Migration Strategies
-
-### From Development to Production
-
-1. **Test thoroughly** in staging environment
-2. **Use specific image tags** instead of latest
-3. **Configure appropriate resources** based on testing
-4. **Set up monitoring** before deployment
-5. **Plan rollback strategy** before deployment
-
-### Version Upgrades
-
-1. **Review release notes** for breaking changes
-2. **Test in staging** environment first
-3. **Backup configurations** before upgrade
-4. **Use rolling updates** for minimal downtime
-5. **Monitor closely** after upgrade
-
-## Best Practices Summary
-
-✅ **Security**:
-- Use minimal RBAC permissions
-- Run as non-root user
-- Use specific image tags
-- Implement network policies
-
-✅ **Reliability**:
-- Set resource limits
-- Configure health checks
-- Use pod disruption budgets
-- Plan for high availability
-
-✅ **Observability**:
-- Enable structured logging
-- Monitor resource usage
-- Set up alerting
-- Regular health checks
-
-✅ **Performance**:
-- Optimize selectors
-- Tune requeue intervals
-- Monitor and scale appropriately
-- Efficient script design
-
-✅ **Operations**:
-- Automate deployments
-- Plan update strategies
-- Backup configurations
-- Document procedures
+## External Resources
+
+For general Kubernetes deployment and security best practices, see:
+- [Kubernetes Security Best Practices](https://kubernetes.io/docs/concepts/security/security-best-practices/)
+- [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+- [RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
+- [Kubernetes Deployment Best Practices](https://kubernetes.io/docs/concepts/workloads/management/)

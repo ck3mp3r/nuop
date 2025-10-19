@@ -7,7 +7,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ### For Users
 - **[Examples](examples/README.md)** - Sample configurations and use cases
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices
-- **[Troubleshooting](TROUBLESHOOTING.md)** - Debugging and common issues
+- **[Development Setup](DEVELOPMENT.md)** - Environment setup, workflow, and troubleshooting
 
 ### For Developers  
 - **[Development Setup](DEVELOPMENT.md)** - Environment setup and workflow
@@ -28,17 +28,17 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ### Examples and Patterns
 - **[Example Scripts](../operator/scripts/README.md)** - Working operator implementations
 - **[Configuration Examples](examples/README.md)** - Various deployment patterns
-- **[Testing Guide](TESTING.md)** - Testing custom scripts and operators
+- **[Testing Guide](TESTING.md)** - Script testing and validation
 
 ## 🛠️ Development Resources
 
 ### Quick References
 - **[Available Commands](DEVELOPMENT.md#available-tools--scripts)** - Development environment tools
 - **[Common Patterns](SCRIPT-DEVELOPMENT.md#common-patterns)** - Script development patterns
-- **[Error Messages](TROUBLESHOOTING.md#common-error-messages)** - Common errors and solutions
+- **[Troubleshooting](DEVELOPMENT.md#troubleshooting)** - Common errors and debugging
 
 ### Advanced Topics
-- **[Performance Optimization](TROUBLESHOOTING.md#performance-issues)** - Optimizing operator and script performance
+- **[Performance Optimization](DEPLOYMENT.md#performance-tuning)** - Optimizing operator and script performance
 - **[Security Best Practices](SCRIPT-DEVELOPMENT.md#security)** - Secure script development
 - **[Multi-Resource Operators](SCRIPT-DEVELOPMENT.md#advanced-topics)** - Complex operator patterns
 
@@ -52,7 +52,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ### Script Developers
 1. Read [Script Development Guide](SCRIPT-DEVELOPMENT.md) for complete tutorial
 2. Study [Example Scripts](../operator/scripts/README.md) for real patterns
-3. Use [Troubleshooting](TROUBLESHOOTING.md) when you hit issues
+3. Check [Development Guide](DEVELOPMENT.md#troubleshooting) when you hit issues
 
 ### Contributors
 1. Follow [Development Setup](DEVELOPMENT.md) for environment configuration
@@ -71,7 +71,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 |----------|--------|--------------|
 | [Development Setup](DEVELOPMENT.md) | ✅ Complete | Latest |
 | [Script Development](SCRIPT-DEVELOPMENT.md) | ✅ Complete | Latest |
-| [Troubleshooting](TROUBLESHOOTING.md) | ✅ Complete | Latest |
+
 | [Contributing](CONTRIBUTING.md) | ✅ Complete | Latest |
 | [Architecture](ARCHITECTURE.md) | ✅ Complete | Latest |
 | [Deployment Guide](DEPLOYMENT.md) | ✅ Complete | Latest |
@@ -80,4 +80,4 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 
 ---
 
-**Need help?** Check the [Troubleshooting Guide](TROUBLESHOOTING.md) or create an issue on GitHub.
+**Need help?** Check the [Development Guide](DEVELOPMENT.md#troubleshooting) or create an issue on GitHub.
