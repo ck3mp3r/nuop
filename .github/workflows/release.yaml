@@ -183,7 +183,7 @@ jobs:
           - arch: arm64
             runner: ubuntu-24.04-arm
             platform: linux/arm64
-    
+
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -260,12 +260,12 @@ jobs:
       - name: Create and push multi-arch manifest
         run: |
           VERSION="${{ needs.prepare-release.outputs.version }}"
-          
+
           # Create versioned manifest
           docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}-amd64 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}-arm64
-          
+
           # Create latest manifest
           docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64 \

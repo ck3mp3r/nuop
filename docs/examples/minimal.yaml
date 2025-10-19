@@ -1,7 +1,7 @@
+---
 # Minimal Example
 # The simplest possible NuOperator configuration
 
----
 apiVersion: kemper.buzz/v1alpha1
 kind: NuOperator
 metadata:
