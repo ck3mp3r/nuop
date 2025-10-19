@@ -6,7 +6,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 
 ### For Users
 - **[Examples](../examples/README.md)** - Sample configurations and use cases
-- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices *(coming soon)*
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Debugging and common issues
 
 ### For Developers  
@@ -17,18 +17,18 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 ## 📚 Reference Documentation
 
 ### Core Concepts
-- **[Architecture Overview](ARCHITECTURE.md)** - System design and components *(coming soon)*
-- **[Operator Modes](../README.md#deployment-approach)** - Standard, Manager, and Managed modes
+- **[Architecture Overview](ARCHITECTURE.md)** - System design and components
+- **[Operator Modes](../README.md#how-it-works)** - Standard, Manager, and Managed modes
 
 ### API Reference
-- **[NuOperator CRD](api/CRD.md)** - Custom resource definition reference *(coming soon)*
+- **[NuOperator CRD](api/CRD.md)** - Custom resource definition reference
 - **[Script API](SCRIPT-DEVELOPMENT.md#script-api-reference)** - Required functions and interfaces
 - **[Configuration Options](api/CONFIG.md)** - Environment and deployment configuration *(coming soon)*
 
 ### Examples and Patterns
 - **[Example Scripts](../operator/scripts/README.md)** - Working operator implementations
 - **[Configuration Examples](../examples/README.md)** - Various deployment patterns
-- **[Testing Guide](TESTING.md)** - Testing custom scripts and operators *(coming soon)*
+- **[Testing Guide](TESTING.md)** - Testing custom scripts and operators
 
 ## 🛠️ Development Resources
 
@@ -73,10 +73,10 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 | [Script Development](SCRIPT-DEVELOPMENT.md) | ✅ Complete | Latest |
 | [Troubleshooting](TROUBLESHOOTING.md) | ✅ Complete | Latest |
 | [Contributing](../CONTRIBUTING.md) | ✅ Complete | Latest |
-| [Architecture](ARCHITECTURE.md) | 🚧 Planned | - |
-| [Deployment Guide](DEPLOYMENT.md) | 🚧 Planned | - |
-| [API Reference](api/) | 🚧 Planned | - |
-| [Testing Guide](TESTING.md) | 🚧 Planned | - |
+| [Architecture](ARCHITECTURE.md) | ✅ Complete | Latest |
+| [Deployment Guide](DEPLOYMENT.md) | ✅ Complete | Latest |
+| [API Reference](api/CRD.md) | ✅ Complete | Latest |
+| [Testing Guide](TESTING.md) | ✅ Complete | Latest |
 
 ---
 
