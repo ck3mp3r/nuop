@@ -42,7 +42,7 @@ status: {}
 Container image for the managed operator deployment.
 
 **Default**: Uses the same image as the manager
-**Example**: `ghcr.io/ck3mp3r/nuop:v0.2.0`
+**Example**: `ghcr.io/ck3mp3r/nuop:latest`
 
 ```yaml
 spec:
@@ -259,7 +259,7 @@ metadata:
   name: multi-resource-operator
   namespace: operators
 spec:
-  image: ghcr.io/ck3mp3r/nuop:v0.2.0
+  image: ghcr.io/ck3mp3r/nuop:latest
   serviceAccountName: nuop-operator
   
   sources:

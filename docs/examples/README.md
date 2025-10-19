@@ -1,147 +1,161 @@
 # NuOperator Examples
 
-This directory contains example configurations for the NuOperator CRD. These examples have been tested against nuop v0.2.0.
-
-## Current Status & Limitations
-
-**⚠️ Important**: Based on testing with nuop v0.2.0, there are some current limitations:
-
-### Technical Details
-- **Current Nushell**: v0.106.1+ supports `get --optional` flag
-- **Container Nushell**: nuop v0.2.0 container has older Nushell version without `--optional` support
-- **Init Script**: Uses `get --optional` syntax, causing container startup failure
-
-### Manager + Managed Mode
-- ❌ **Current Issue**: Container has outdated Nushell version that doesn't support `--optional` flag
-- 🔧 **Workaround**: Needs updated nuop image with current Nushell version
-- ✅ **Manager works**: Creates deployments and ConfigMaps correctly
-- 📝 **Use case**: Best for when the init container issue is resolved
-
-### Standard Mode  
-- ✅ **Works**: When scripts are bundled in container image
-- ❌ **Limitation**: Requires custom image build with scripts included
-- 📝 **Use case**: Production deployments with pre-built images
+This directory contains working example configurations for the NuOperator CRD that demonstrate real functionality using actual scripts from the nuop repository.
 
 ## Available Examples
 
-### 1. minimal.yaml ✅ TESTED
-**Purpose**: Simplest possible NuOperator configuration that validates successfully.
+### 1. config-replicator.yaml
+**Purpose**: Demonstrates ConfigMap replication across namespaces using the built-in config-replicator script.
 
-**Status**: ✅ Creates NuOperator resource successfully, but requires custom image with bundled scripts to function.
+**Features shown**:
+- Manager + Managed mode deployment
+- Real script usage (`config-replicator` from nuop repository)
+- Proper RBAC configuration for ConfigMap operations
+- Label-based resource selection
+- Complete example with test ConfigMap
 
-```bash
-kubectl apply -f minimal.yaml
-kubectl get nuoperators  # Shows resource created
-```
-
-### 2. config-replicator.yaml ⚠️ PARTIAL
-**Purpose**: Demonstrates ConfigMap replication (Manager+Managed mode).
-
-**Status**: ⚠️ Manager creates managed deployment, but init container fails due to Nushell compatibility.
-
-**What works**:
-- ✅ NuOperator resource creation
-- ✅ Manager creates deployment and ConfigMaps
-- ✅ RBAC configuration is correct
-
-**What doesn't work**:
-- ❌ Init container crashes (container has outdated Nushell version, missing `--optional` flag)
-
+**Usage**:
 ```bash
 kubectl apply -f config-replicator.yaml
-kubectl get nuoperators,deployments,configmaps  # Shows resources created
-kubectl logs deployment/config-replicator-nuop -c init-container  # Shows error
+
+# Test by creating a ConfigMap with the replication label
+# (Example ConfigMap is included in the file)
 ```
 
-### 3. secret-cloner.yaml ⚠️ PARTIAL
-**Purpose**: Demonstrates Secret cloning (Manager+Managed mode).
+### 2. secret-cloner.yaml  
+**Purpose**: Demonstrates Secret cloning across namespaces using the built-in secret-cloner script.
 
-**Status**: ⚠️ Same issues as config-replicator due to shared init container.
+**Features shown**:
+- Secret management operations
+- Cross-namespace secret replication
+- Proper RBAC for Secret operations
+- Complete example with test Secret
 
-### 4. local-development.yaml 📝 REFERENCE
-**Purpose**: Shows volume-mounted local script development setup.
+**Usage**:
+```bash
+kubectl apply -f secret-cloner.yaml
 
-**Status**: 📝 Reference example for development workflow (requires local script directory).
+# Test by creating a Secret with the replication label
+# (Example Secret is included in the file)
+```
 
-### 5. standard-mode.yaml 📝 REFERENCE
-**Purpose**: Shows Standard mode deployment with bundled scripts.
+### 3. minimal.yaml
+**Purpose**: The simplest possible NuOperator configuration for learning the basics.
 
-**Status**: 📝 Reference example (requires custom image build).
+**Features shown**:
+- Minimal required fields only
+- No RBAC (uses default service account)
+- Basic mapping configuration
 
-## Tested Functionality
+**Usage**:
+```bash
+kubectl apply -f minimal.yaml
+```
 
-### ✅ What Works
-1. **Manager Deployment**: nuop manager starts and runs correctly
-2. **CRD Validation**: All NuOperator resources validate and create successfully  
-3. **Resource Creation**: Manager creates deployments, ConfigMaps, and RBAC correctly
-4. **Script Syntax**: Local script testing works (config-replicator and secret-cloner scripts are valid)
+### 4. local-development.yaml
+**Purpose**: Shows how to develop and test scripts locally using volume mounts.
 
-### ❌ Current Issues
-1. **Init Container**: Outdated Nushell version in container doesn't support `--optional` flag
-2. **Standard Mode**: Requires custom image with scripts bundled
+**Features shown**:
+- Local script development workflow
+- Volume-mounted script sources
+- Development-specific environment variables
+- Custom deployment with hostPath volumes
 
-### 🔧 Workarounds
-1. **For Manager+Managed**: Wait for updated nuop image with current Nushell version
-2. **For Standard Mode**: Build custom image with scripts:
-   ```dockerfile
-   FROM ghcr.io/ck3mp3r/nuop:latest
-   COPY scripts/ /scripts/
-   ```
+**Usage**:
+```bash
+# Modify the hostPath to point to your local script directory
+kubectl apply -f local-development.yaml
+```
+
+### 5. standard-mode.yaml
+**Purpose**: Shows Standard mode deployment with scripts bundled in container images.
+
+**Features shown**:
+- Standard mode configuration
+- Custom image with bundled scripts
+- Production deployment pattern
+
+**Usage**:
+```bash
+# Requires custom image build first:
+# docker build -t your-registry/nuop-with-scripts .
+kubectl apply -f standard-mode.yaml
+```
 
 ## Testing the Examples
 
 ### Prerequisites
+1. A Kubernetes cluster with nuop manager deployed
+2. The nuop CRDs installed (`kubectl apply -f operator/chart/crds/nuop.yaml`)
+
+### Testing ConfigMap Replication
 ```bash
-# Start kind cluster
-kind create cluster --name nuop --config kind/kind-cluster.yaml
-
-# Install CRDs
-kubectl apply -f operator/chart/crds/nuop.yaml
-
-# Deploy manager (optional, for Manager+Managed mode)
-kubectl apply -f test-deployment.yaml  # From project root
-```
-
-### Test Commands
-```bash
-# Test example validation
-kubectl --dry-run=client apply -f minimal.yaml
-
-# Apply examples
-kubectl apply -f minimal.yaml
+# Apply the config-replicator example
 kubectl apply -f config-replicator.yaml
 
-# Check created resources
-kubectl get nuoperators,deployments,configmaps,pods
+# The example includes a test ConfigMap - check if it gets replicated
+kubectl get configmaps -A -l app.kubernetes.io/replicated-by
 
-# Check logs
-kubectl logs -n nuop-system deployment/nuop-manager  # Manager logs
-kubectl logs deployment/config-replicator-nuop -c init-container  # Init container (will show error)
+# Check operator logs
+kubectl logs -l app.kubernetes.io/name=nuop
 ```
 
-## Local Script Testing
-
-You can test the scripts locally while waiting for container issues to be resolved:
-
+### Testing Secret Cloning
 ```bash
-# Test script configuration
-echo '{}' | nu operator/scripts/config-replicator/mod.nu config
+# Apply the secret-cloner example  
+kubectl apply -f secret-cloner.yaml
 
-# Test with sample ConfigMap (create test-configmap.yaml first)
-cat test-configmap.yaml | nu operator/scripts/config-replicator/mod.nu reconcile
+# The example includes a test Secret - check if it gets cloned
+kubectl get secrets -A -l app.kubernetes.io/replicated-by
+
+# Check operator logs
+kubectl logs -l app.kubernetes.io/name=nuop
 ```
 
-## Next Steps
+## Key Concepts Demonstrated
 
-For fully working examples, the following needs to be addressed:
+### Manager + Managed Mode
+All examples use the Manager + Managed deployment mode where:
+- A manager watches NuOperator custom resources
+- The manager creates managed operator deployments 
+- Scripts are fetched from the nuop repository
 
-1. **Update Nushell version** in nuop image to support current syntax (including `--optional` flag)
-2. **Provide pre-built images** with example scripts bundled for Standard mode
-3. **Update examples** once container issues are resolved
+### Real Script Integration
+Examples use actual working scripts from `operator/scripts/`:
+- `config-replicator` - Replicates ConfigMaps to target namespaces
+- `secret-cloner` - Clones Secrets to target namespaces
+
+### Proper RBAC
+Working examples include correct RBAC configurations that grant scripts only the permissions they need.
+
+### Label-Based Selection
+Scripts watch for resources with specific labels:
+- `app.kubernetes.io/replicate: "yes"` - Marks resources for replication/cloning
+
+## Deployment Modes
+
+### Manager + Managed Mode (Examples 1-4)
+- **Best for**: Dynamic operator provisioning, multi-tenant environments
+- **How it works**: Manager watches NuOperator CRDs and creates managed operator deployments
+- **Script source**: Fetched from Git repositories or other sources at runtime
+
+### Standard Mode (Example 5)
+- **Best for**: Production deployments with fixed script sets
+- **How it works**: Scripts are bundled into container images at build time
+- **Script source**: Bundled in container at `/scripts`
+
+## Customization
+
+To adapt these examples:
+
+1. **Change target resources**: Modify `labelSelectors` in mappings
+2. **Adjust permissions**: Update RBAC rules based on script requirements  
+3. **Use custom scripts**: Change `sources[].location` to your script repository
+4. **Configure namespaces**: Set target namespaces in resource annotations
 
 ## External Resources
 
 - [NuOperator CRD Reference](../api/CRD.md)
-- [Script Development Guide](../SCRIPT-DEVELOPMENT.md) 
+- [Script Development Guide](../SCRIPT-DEVELOPMENT.md)
 - [Deployment Guide](../DEPLOYMENT.md)
 - [Testing Guide](../TESTING.md)
