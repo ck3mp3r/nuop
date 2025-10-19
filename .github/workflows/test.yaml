@@ -41,11 +41,14 @@ jobs:
 
       - uses: DeterminateSystems/nix-installer-action@main
         if: ${{ !env.ACT }}
+        with:
+          flakehub: false
 
       - uses: DeterminateSystems/nix-installer-action@main
         if: ${{ env.ACT }}
         with:
           local-root: /tmp
+          flakehub: false
 
       - uses: DeterminateSystems/flake-checker-action@main
 
