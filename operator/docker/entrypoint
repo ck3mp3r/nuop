@@ -3,5 +3,11 @@
 if ($env.NUOP_MODE == "init") {
   init-sources
 } else {
+  # Install CRDs before starting operator (Standard mode only)
+  let mode = ($env | get --optional NUOP_MODE | default "standard")
+  if $mode == "standard" {
+    install-crds
+  }
+  
   operator
 }

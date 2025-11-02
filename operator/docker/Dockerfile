@@ -10,6 +10,7 @@ RUN apk add \
 COPY --from=nix-result bin/operator /bin/
 COPY ./docker/entrypoint /bin/
 COPY ./docker/init-sources /bin/
+COPY ./docker/install-crds /bin/
 COPY ./scripts /scripts
 
 RUN chown -R nushell:nushell /scripts
