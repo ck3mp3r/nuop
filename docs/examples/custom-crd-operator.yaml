@@ -1,0 +1,220 @@
+# Example: Custom Operator with Automatic CRD Installation
+#
+# This example demonstrates how to create a custom operator that manages
+# a custom resource (DatabaseBackup) with automatic CRD installation.
+#
+# Directory structure for your custom operator image:
+# /
+# ├── scripts/
+# │   └── database-backup-operator/
+# │       └── mod.nu                    # Operator script
+# └── crds/                             # CRDs are auto-installed from here
+#     └── databasebackup-crd.yaml       # Your custom CRD
+#
+# The CRD will be automatically installed when the container starts in Standard mode.
+
+---
+# Example CRD Definition
+# Place this in your container at: /crds/databasebackup-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: databasebackups.backup.example.com
+spec:
+  group: backup.example.com
+  names:
+    kind: DatabaseBackup
+    listKind: DatabaseBackupList
+    plural: databasebackups
+    singular: databasebackup
+    shortNames:
+      - dbbackup
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - schedule
+                - database
+              properties:
+                schedule:
+                  type: string
+                  description: "Cron schedule for backups (e.g., '0 2 * * *')"
+                  pattern: '^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$'
+                database:
+                  type: string
+                  description: "Database name to backup"
+                retention:
+                  type: integer
+                  default: 7
+                  minimum: 1
+                  maximum: 365
+                  description: "Days to retain backups"
+                enabled:
+                  type: boolean
+                  default: true
+                  description: "Whether backups are enabled"
+            status:
+              type: object
+              properties:
+                lastBackup:
+                  type: string
+                  format: date-time
+                  description: "Timestamp of last successful backup"
+                state:
+                  type: string
+                  enum:
+                    - Pending
+                    - Running
+                    - Completed
+                    - Failed
+                  description: "Current backup state"
+                message:
+                  type: string
+                  description: "Human-readable status message"
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Database
+          type: string
+          jsonPath: .spec.database
+        - name: Schedule
+          type: string
+          jsonPath: .spec.schedule
+        - name: Last Backup
+          type: string
+          jsonPath: .status.lastBackup
+        - name: State
+          type: string
+          jsonPath: .status.state
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+
+---
+# Example Dockerfile for building your custom operator
+# Save this as: Dockerfile
+#
+# FROM ghcr.io/ck3mp3r/nuop:latest
+# 
+# # Copy your operator scripts
+# COPY scripts/ /scripts/
+# 
+# # Copy your CRD definitions (will be auto-installed)
+# COPY crds/ /crds/
+# 
+# # That's it! The operator will automatically:
+# # 1. Install CRDs from /crds on startup
+# # 2. Discover scripts from /scripts
+# # 3. Start controllers for each script
+
+---
+# Deployment for your custom operator (Standard mode)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-backup-operator
+  namespace: operators
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database-backup-operator
+  template:
+    metadata:
+      labels:
+        app: database-backup-operator
+    spec:
+      serviceAccountName: database-backup-operator
+      containers:
+        - name: operator
+          image: your-registry/database-backup-operator:latest
+          env:
+            - name: NUOP_MODE
+              value: standard
+            - name: RUST_LOG
+              value: info
+            # Optional: Override CRD path
+            # - name: CRDS_PATH
+            #   value: /custom/crds
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+
+---
+# ServiceAccount with CRD management permissions
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: database-backup-operator
+  namespace: operators
+
+---
+# ClusterRole with permissions for CRD installation and resource management
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: database-backup-operator
+rules:
+  # CRD management (for auto-installation)
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  
+  # DatabaseBackup custom resource management
+  - apiGroups: ["backup.example.com"]
+    resources: ["databasebackups"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # DatabaseBackup status updates
+  - apiGroups: ["backup.example.com"]
+    resources: ["databasebackups/status"]
+    verbs: ["get", "update", "patch"]
+  
+  # Additional resources your operator might need
+  - apiGroups: [""]
+    resources: ["pods", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: database-backup-operator
+subjects:
+  - kind: ServiceAccount
+    name: database-backup-operator
+    namespace: operators
+roleRef:
+  kind: ClusterRole
+  name: database-backup-operator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Example DatabaseBackup resource
+# This will be managed by your operator after the CRD is installed
+apiVersion: backup.example.com/v1
+kind: DatabaseBackup
+metadata:
+  name: production-db-backup
+  namespace: default
+spec:
+  database: production-db
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30
+  enabled: true
