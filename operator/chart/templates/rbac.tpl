@@ -38,6 +38,10 @@ rules:
   - apiGroups: ["kemper.buzz"]
     resources: ["nuoperators"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # CRD management permissions for auto-installation
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "create", "update", "patch"]
 {{- end }}
 
 {{- if not .Values.rbac.existingClusterRole }}
