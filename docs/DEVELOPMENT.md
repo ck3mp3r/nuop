@@ -34,7 +34,7 @@ This guide covers setting up your development environment and working with the N
 
 ## Development Environment
 
-The project uses Nix flakes for reproducible development environments with two configurations:
+The project uses [devenv](https://devenv.sh/) for reproducible development environments with two configurations:
 
 - **Default shell** (`nix develop`): Full development environment with all tools
 - **CI shell** (`nix develop .#ci`): Minimal environment for testing only
@@ -43,19 +43,11 @@ The project uses Nix flakes for reproducible development environments with two c
 
 | Command | Description |
 |---------|-------------|
-| `op-build` | Build and load the operator Docker image into kind |
-| `op-buildx` | Build and push multi-arch Docker images |
+| `op-build` | Build the operator binary |
 | `op-tests` | Run all tests including integration tests |
 | `op-coverage` | Generate code coverage report |
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
-| `op-crds` | Generate CRD manifests |
-| `op-clean` | Clean cargo build artifacts |
-| `cluster-start` | Start colima and the kind cluster |
-| `tilt-up` | Start colima, kind, and tilt |
-| `tilt-down` | Stop tilt |
-| `act-test` | Run the test workflow locally with act |
-| `act-buildx` | Run the buildx workflow locally with act |
 
 | `op-run-standard` | Run operator in standard mode locally |
 | `op-run-manager` | Run operator in manager mode locally |
@@ -67,10 +59,10 @@ If you prefer not to use direnv:
 
 ```bash
 # Enter development shell manually
-nix develop
+nix develop --no-pure-eval
 
 # Or use the minimal CI shell
-nix develop .#ci
+nix develop .#ci --no-pure-eval
 ```
 
 ## Building and Testing
@@ -92,11 +84,11 @@ op-coverage
 
 ## Local Development Workflow
 
-1. **Start the cluster**: `cluster-start` (starts colima + kind)
+1. **Start local cluster**: `kind-start`
 2. **Make code changes** in `operator/src/`
 3. **Test changes**: `op-tests`
-4. **Deploy with tilt**: `tilt-up` (builds the image, deploys the manager, and applies the managed example)
-5. **Stop tilt**: `tilt-down`
+4. **Build container**: `op-build`
+5. **Deploy locally**: Apply example configurations to test
 
 ## Nix Flake Structure
 

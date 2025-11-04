@@ -96,11 +96,11 @@ spec:
   sources:
     # Public Git repository
     - location: https://github.com/your-org/operator-scripts.git?ref=v1.0.0&dir=operators
-      path: scripts/public
+      path: /scripts/public
 
     # Private repository with authentication
     - location: https://github.com/company/internal-operators.git
-      path: scripts/private
+      path: /scripts/private
       credentials:
         username:
           name: git-credentials
@@ -111,7 +111,7 @@ spec:
 
     # Local volume mount
     - location: /opt/scripts
-      path: scripts/local
+      path: /scripts/local
 ```
 
 ### `spec.mappings` (array, required)
@@ -264,7 +264,7 @@ spec:
 
   sources:
     - location: https://github.com/company/k8s-operators.git?ref=v2.1.0&dir=scripts
-      path: scripts/core
+      path: /scripts/core
       credentials:
         username:
           name: git-credentials
@@ -274,7 +274,7 @@ spec:
           key: token
 
     - location: /opt/custom-scripts
-      path: scripts/local
+      path: /scripts/local
 
   mappings:
     # ConfigMap replication

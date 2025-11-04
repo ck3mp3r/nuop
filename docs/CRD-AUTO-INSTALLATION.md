@@ -135,7 +135,7 @@ rules:
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "create", "update", "patch"]
-  
+
   # Your custom resource management
   - apiGroups: ["example.com"]
     resources: ["mycustomresources"]
