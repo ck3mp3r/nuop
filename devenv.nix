@@ -13,10 +13,12 @@
     kubectl
     tilt
     cargo-tarpaulin
+    just
   ];
 
   enterShell = ''
     export KUBECONFIG="$DEVENV_ROOT/kind/kube.config"
+    export GITUB_TOKEN=$(gh auth token)
   '';
 
   scripts = {
@@ -50,14 +52,14 @@
       "
     '';
 
-    op-coverage.exec = "make coverage";
-    op-clean.exec = "make clean";
-    op-crds.exec = "make crds";
-    op-build.exec = "make build";
-    op-tests.exec = "make tests";
-    act-test.exec = "make act-test";
-    op-clippy.exec = "make clippy";
-    op-fmt.exec = "make fmt";
+    op-coverage.exec = "just coverage";
+    op-clean.exec = "just clean";
+    op-crds.exec = "just crds";
+    op-build.exec = "just build";
+    op-tests.exec = "just tests";
+    act-test.exec = "just act-test";
+    op-clippy.exec = "just clippy";
+    op-fmt.exec = "just fmt";
 
     op-run-manager.exec = ''
       cd $DEVENV_ROOT/operator && LOG_LEVEL=debug NUOP_MODE=manager cargo run --bin operator

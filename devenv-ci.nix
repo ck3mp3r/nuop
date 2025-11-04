@@ -4,6 +4,7 @@
   packages = with pkgs; [
     # Essential for script execution tests
     nushell
+    just
   ];
 
   # Minimal environment setup
