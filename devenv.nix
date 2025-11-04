@@ -15,29 +15,39 @@
     cargo-tarpaulin
   ];
 
-  env = {
-    KUBECONFIG = "$DEVENV_ROOT/kind/kube.config";
-  };
-
   enterShell = ''
-    mkdir -p $DEVENV_ROOT/kind
+    export KUBECONFIG="$DEVENV_ROOT/kind/kube.config"
   '';
 
   scripts = {
     kind-start.exec = ''
-      #!/usr/bin/env nu
+      nu -c "
+        let cluster_name = 'nuop'
+        let config_path = (\$env.DEVENV_ROOT + '/kind/kind-cluster.yaml')
+        let kube_config_path = (\$env.DEVENV_ROOT + '/kind/kube.config')
 
-      if (kind get clusters | find "nuop" | is-empty) {
-        kind create cluster --name nuop --config ./kind/kind-cluster.yaml
-        kind get kubeconfig -n nuop
-        | from yaml
-        | reject clusters.0.cluster.certificate-authority-data
-        | upsert clusters.0.cluster.insecure-skip-tls-verify true
-        | upsert clusters.0.cluster.server https://127.0.0.1:7543
-        | to yaml
-        | save -f ./kind/kube.config
-        kubectx kind-nuop
-      }
+        # Check if cluster already exists
+        let clusters = (kind get clusters | lines)
+        if (\$cluster_name not-in \$clusters) {
+          print \$'Creating kind cluster: (\$cluster_name)'
+          kind create cluster --name \$cluster_name --config \$config_path
+
+          # Get and modify kubeconfig
+          let raw_config = (kind get kubeconfig -n \$cluster_name)
+          \$raw_config
+          | from yaml
+          | reject clusters.0.cluster.certificate-authority-data
+          | upsert clusters.0.cluster.insecure-skip-tls-verify true
+          | upsert clusters.0.cluster.server 'https://127.0.0.1:7543'
+          | to yaml
+          | save -f \$kube_config_path
+
+          print \$'✓ Cluster created and kubeconfig saved to (\$kube_config_path)'
+          print \$'✓ KUBECONFIG is set to: (\$env.KUBECONFIG)'
+        } else {
+          print \$'✓ Cluster (\$cluster_name) already exists'
+        }
+      "
     '';
 
     op-coverage.exec = "make coverage";
