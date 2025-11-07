@@ -1,0 +1,93 @@
+# Complete deployment for greeting-operator test
+# This demonstrates the automatic CRD installation feature
+
+---
+# ServiceAccount for the operator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: greeting-operator
+  namespace: default
+
+---
+# ClusterRole with permissions for CRD installation and custom resource management
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: greeting-operator
+rules:
+  # CRD management (required for auto-installation)
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "create", "update", "patch"]
+
+  # GreetingRequest custom resource management
+  - apiGroups: ["demo.nuop.io"]
+    resources: ["greetingrequests"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+
+  # GreetingRequest status subresource
+  - apiGroups: ["demo.nuop.io"]
+    resources: ["greetingrequests/status"]
+    verbs: ["get", "update", "patch"]
+
+  # ConfigMap management (operator creates greeting ConfigMaps)
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Namespace access
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: greeting-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: greeting-operator
+subjects:
+  - kind: ServiceAccount
+    name: greeting-operator
+    namespace: default
+
+---
+# Deployment for the greeting-operator
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greeting-operator
+  namespace: default
+  labels:
+    app: greeting-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: greeting-operator
+  template:
+    metadata:
+      labels:
+        app: greeting-operator
+    spec:
+      serviceAccountName: greeting-operator
+      containers:
+        - name: operator
+          image: ghcr.io/ck3mp3r/nuop-test:latest
+          imagePullPolicy: Never  # Use local image from kind
+          env:
+            # Set log level for visibility (optional)
+            - name: LOG_LEVEL
+              value: "info"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

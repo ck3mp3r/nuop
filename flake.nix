@@ -2,14 +2,14 @@
   description = "Nushell Operator";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    devenv = {
-      url = "github:cachix/devenv";
-      inputs.nixpkgs.follows = "nixpkgs";
+    base-nixpkgs.url = "github:ck3mp3r/flakes?dir=base-nixpkgs";
+    nixpkgs.follows = "base-nixpkgs/unstable";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    fenix = {
-      url = "github:nix-community/fenix";
+    rustnix = {
+      url = "github:ck3mp3r/flakes?dir=rustnix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -18,54 +18,57 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
 
-      perSystem = {
-        system,
-        pkgs,
-        ...
-      }: let
+      perSystem = {system, ...}: let
+        overlays = [inputs.base-nixpkgs.overlays.default];
+        pkgs = import inputs.nixpkgs {inherit system overlays;};
+
+        cargoToml = fromTOML (builtins.readFile ./operator/Cargo.toml);
+        cargoLock = {lockFile = ./operator/Cargo.lock;};
+
         operatorPackages = import ./operator/nix {
           inherit
-            pkgs
+            inputs
             system
+            pkgs
+            cargoToml
+            cargoLock
+            overlays
             ;
-          overlays = [];
-          fenix = inputs.fenix;
-          nixpkgs = inputs.nixpkgs;
         };
+
+        # Import shell configurations
+        devShellConfig = import ./nix/dev.nix {inherit pkgs inputs system;};
+        ciShellConfig = import ./nix/ci.nix {inherit pkgs inputs system;};
+
+        # Helper to create a shell from config
+        mkShellFromConfig = config:
+          pkgs.mkShellNoCC {
+            packages =
+              config.packages
+              ++ [
+                operatorPackages.toolchain
+              ];
+
+            shellHook = ''
+              ${config.enterShell}
+              ${config.shellHook or ""}
+            '';
+          }
+          // {
+            inherit (config) env;
+          };
       in {
-        packages = operatorPackages;
+        packages = operatorPackages.packages;
 
-        devShells.default = inputs.devenv.lib.mkShell {
-          inherit inputs pkgs;
-          modules = [
-            (import ./devenv.nix)
-            {
-              packages = [
-                operatorPackages.toolchain
-              ];
+        devShells.default = mkShellFromConfig (devShellConfig
+          // {
+            packages = devShellConfig.packages ++ [operatorPackages.toolchain];
+          });
 
-              env = {
-                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-              };
-            }
-          ];
-        };
-
-        devShells.ci = inputs.devenv.lib.mkShell {
-          inherit inputs pkgs;
-          modules = [
-            (import ./devenv-ci.nix)
-            {
-              packages = [
-                operatorPackages.toolchain
-              ];
-
-              env = {
-                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-              };
-            }
-          ];
-        };
+        devShells.ci = mkShellFromConfig (ciShellConfig
+          // {
+            packages = ciShellConfig.packages ++ [operatorPackages.toolchain];
+          });
 
         formatter = pkgs.alejandra;
       };

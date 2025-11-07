@@ -103,13 +103,13 @@ spec:
 # Save this as: Dockerfile
 #
 # FROM ghcr.io/ck3mp3r/nuop:latest
-# 
+#
 # # Copy your operator scripts
 # COPY scripts/ /scripts/
-# 
+#
 # # Copy your CRD definitions (will be auto-installed)
 # COPY crds/ /crds/
-# 
+#
 # # That's it! The operator will automatically:
 # # 1. Install CRDs from /crds on startup
 # # 2. Discover scripts from /scripts
@@ -171,22 +171,22 @@ rules:
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "create", "update", "patch"]
-  
+
   # DatabaseBackup custom resource management
   - apiGroups: ["backup.example.com"]
     resources: ["databasebackups"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  
+
   # DatabaseBackup status updates
   - apiGroups: ["backup.example.com"]
     resources: ["databasebackups/status"]
     verbs: ["get", "update", "patch"]
-  
+
   # Additional resources your operator might need
   - apiGroups: [""]
     resources: ["pods", "configmaps", "secrets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  
+
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
