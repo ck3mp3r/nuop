@@ -5,7 +5,6 @@
     black
     cargo-tarpaulin
     colima
-    git
     helm-ls
     just
     kind
