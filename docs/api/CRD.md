@@ -22,16 +22,16 @@ spec:
   # Operator configuration
   image: ghcr.io/ck3mp3r/nuop:latest
   serviceAccountName: nuop-operator
-  
+
   # Script sources
   sources: []
-  
+
   # Resource mappings
   mappings: []
-  
+
   # Environment variables
   env: []
-  
+
 status: {}
 ```
 
@@ -97,8 +97,8 @@ spec:
     # Public Git repository
     - location: https://github.com/your-org/operator-scripts.git?ref=v1.0.0&dir=operators
       path: /scripts/public
-    
-    # Private repository with authentication  
+
+    # Private repository with authentication
     - location: https://github.com/company/internal-operators.git
       path: /scripts/private
       credentials:
@@ -108,7 +108,7 @@ spec:
         password:
           name: git-credentials
           key: token
-    
+
     # Local volume mount
     - location: /opt/scripts
       path: /scripts/local
@@ -158,7 +158,7 @@ spec:
       labelSelectors:
         app.kubernetes.io/replicate: "yes"
       requeue_after_noop: 300
-    
+
     # Manage custom resources
     - name: backup-controller
       kind: Backup
@@ -228,21 +228,21 @@ spec:
     # Static configuration
     - name: LOG_LEVEL
       value: debug
-    
+
     # From ConfigMap
     - name: REQUEUE_INTERVAL
       valueFrom:
         configMapKeyRef:
           name: operator-config
           key: requeue-seconds
-    
+
     # From Secret
     - name: GITHUB_TOKEN
       valueFrom:
         secretKeyRef:
           name: git-credentials
           key: token
-    
+
     # Pod metadata
     - name: OPERATOR_NAMESPACE
       valueFrom:
@@ -261,7 +261,7 @@ metadata:
 spec:
   image: ghcr.io/ck3mp3r/nuop:latest
   serviceAccountName: nuop-operator
-  
+
   sources:
     - location: https://github.com/company/k8s-operators.git?ref=v2.1.0&dir=scripts
       path: /scripts/core
@@ -270,12 +270,12 @@ spec:
           name: git-credentials
           key: username
         password:
-          name: git-credentials  
+          name: git-credentials
           key: token
-    
+
     - location: /opt/custom-scripts
       path: /scripts/local
-  
+
   mappings:
     # ConfigMap replication
     - name: config-replicator
@@ -284,7 +284,7 @@ spec:
       labelSelectors:
         replicate: "true"
       requeue_after_noop: 600
-    
+
     # Secret management
     - name: secret-rotator
       kind: Secret
@@ -292,7 +292,7 @@ spec:
       labelSelectors:
         rotate: "enabled"
       requeue_after_noop: 3600
-    
+
     # Custom resource handling
     - name: backup-controller
       kind: DatabaseBackup
@@ -300,23 +300,23 @@ spec:
       group: database.company.com
       fieldSelectors:
         spec.enabled: "true"
-  
+
   env:
     - name: LOG_LEVEL
       value: info
-    
+
     - name: SLACK_WEBHOOK
       valueFrom:
         secretKeyRef:
           name: notification-config
           key: slack-webhook
-    
+
     - name: BACKUP_BUCKET
       valueFrom:
         configMapKeyRef:
           name: backup-config
           key: s3-bucket
-    
+
     - name: OPERATOR_NAMESPACE
       valueFrom:
         fieldRef:
@@ -328,7 +328,7 @@ spec:
 The `status` field is managed by the operator and reflects the current state of the managed deployment. While the specific status schema is extensible, it typically includes:
 
 - Deployment status and readiness
-- Error conditions and messages  
+- Error conditions and messages
 - Last reconciliation timestamps
 - Active script and source information
 
@@ -358,7 +358,7 @@ The `status` field is managed by the operator and reflects the current state of 
 - Use specific image tags rather than `latest`
 - Consider network policies for Git access
 
-### Performance  
+### Performance
 - Use specific selectors to minimize watched resources
 - Set appropriate requeue intervals based on reconciliation needs
 - Avoid overly broad label selectors

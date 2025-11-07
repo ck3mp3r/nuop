@@ -21,6 +21,13 @@ windows:
       - script: |
           #!/usr/bin/env nu
 
+          # Check if Colima is running, start it if not
+          let colima_status = (colima status | complete)
+          if $colima_status.exit_code != 0 or ($colima_status.stdout | str contains "not running") {
+            print "Colima is not running, starting it..."
+            colima start
+          }
+
           if (kind get clusters | find "nuop" | is-empty) {
             kind create cluster --name nuop --config ./kind/kind-cluster.yaml
             kind get kubeconfig -n nuop
