@@ -1,0 +1,57 @@
+# Example GreetingRequest Custom Resources
+# These demonstrate the greeting-operator in action
+
+---
+apiVersion: demo.nuop.io/v1
+kind: GreetingRequest
+metadata:
+  name: hello-world
+  namespace: default
+spec:
+  name: World
+  language: en
+  style: informal
+
+---
+apiVersion: demo.nuop.io/v1
+kind: GreetingRequest
+metadata:
+  name: bonjour-france
+  namespace: default
+spec:
+  name: France
+  language: fr
+  style: formal
+
+---
+apiVersion: demo.nuop.io/v1
+kind: GreetingRequest
+metadata:
+  name: hola-amigo
+  namespace: default
+spec:
+  name: Amigo
+  language: es
+  style: informal
+
+---
+apiVersion: demo.nuop.io/v1
+kind: GreetingRequest
+metadata:
+  name: konnichiwa-japan
+  namespace: default
+spec:
+  name: Japan
+  language: ja
+  style: formal
+
+---
+apiVersion: demo.nuop.io/v1
+kind: GreetingRequest
+metadata:
+  name: guten-tag-deutschland
+  namespace: default
+spec:
+  name: Deutschland
+  language: de
+  style: formal

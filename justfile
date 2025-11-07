@@ -15,7 +15,7 @@ tests:
 
 # Build docker image and load into kind
 build:
-    cd operator && docker build --debug -f docker/Dockerfile . -t {{ REGISTRY }}/{{ IMAGE_NAME }}:{{ VERSION }}
+    cd operator && docker build -f docker/Dockerfile.local . -t {{ REGISTRY }}/{{ IMAGE_NAME }}:{{ VERSION }}
     kind load docker-image {{ REGISTRY }}/{{ IMAGE_NAME }}:latest -n nuop
 
 # Build multi-platform images with buildx
@@ -68,3 +68,33 @@ act-buildx:
         -P ubuntu-latest=catthehacker/ubuntu:js-latest \
         -W .github/workflows/buildx.yaml \
         -j build
+
+# Build test operator image (greeting-operator) and load into kind
+test-build:
+    cd tests && docker build -t {{ REGISTRY }}/{{ IMAGE_NAME }}-test:{{ VERSION }} .
+    kind load docker-image {{ REGISTRY }}/{{ IMAGE_NAME }}-test:latest -n nuop
+
+# Deploy test operator to kind cluster
+test-deploy:
+    kubectl apply -f tests/examples/deployment.yaml
+
+# Delete test operator from kind cluster
+test-clean:
+    kubectl delete greetingrequests.demo.nuop.io --all --all-namespaces --ignore-not-found=true --wait=false || true
+    kubectl delete -f tests/examples/deployment.yaml --ignore-not-found=true --wait=false || true
+    kubectl delete configmaps -l app.kubernetes.io/managed-by=greeting-operator --all-namespaces --ignore-not-found=true --wait=false || true
+    # Don't delete CRD - let the operator reinstall it automatically
+
+# Full test workflow: build, deploy, create test resources, and verify
+test-run: build test-build test-deploy
+    @echo "✅ Test operator deployed. Waiting for pod to be ready..."
+    @sleep 10
+    @echo "\n📋 Operator logs:"
+    @kubectl logs -l app=greeting-operator -n default --tail=50 || true
+    @echo "\n📝 Creating GreetingRequests..."
+    kubectl apply -f tests/examples/greetingrequest.yaml
+    @sleep 5
+    @echo "\n✅ Verifying ConfigMaps were created:"
+    kubectl get configmaps -l app.kubernetes.io/managed-by=greeting-operator
+    @echo "\n✅ Verifying GreetingRequests:"
+    kubectl get greetingrequests.demo.nuop.io
