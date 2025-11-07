@@ -1,6 +1,6 @@
 # Nushell Operator Justfile
-
 # Variables
+
 IMAGE_NAME := "nuop"
 VERSION := "latest"
 REGISTRY := "ghcr.io/ck3mp3r"
@@ -15,14 +15,14 @@ tests:
 
 # Build docker image and load into kind
 build:
-    cd operator && docker build --debug -f docker/Dockerfile . -t {{REGISTRY}}/{{IMAGE_NAME}}:{{VERSION}}
-    kind load docker-image {{REGISTRY}}/{{IMAGE_NAME}}:latest -n nuop
+    cd operator && docker build --debug -f docker/Dockerfile . -t {{ REGISTRY }}/{{ IMAGE_NAME }}:{{ VERSION }}
+    kind load docker-image {{ REGISTRY }}/{{ IMAGE_NAME }}:latest -n nuop
 
 # Build multi-platform images with buildx
 buildx:
     cd operator && docker buildx create --name mybuilder --use || true
     cd operator && docker buildx inspect --bootstrap
-    cd operator && docker buildx build -f docker/Dockerfile --platform linux/amd64,linux/arm64 -t {{REGISTRY}}/{{IMAGE_NAME}}:{{VERSION}} --push .
+    cd operator && docker buildx build -f docker/Dockerfile --platform linux/amd64,linux/arm64 -t {{ REGISTRY }}/{{ IMAGE_NAME }}:{{ VERSION }} --push .
 
 # Clean build artifacts
 clean:
