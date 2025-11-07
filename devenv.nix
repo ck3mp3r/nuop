@@ -1,19 +1,20 @@
 {pkgs, ...}: {
   packages = with pkgs; [
-    alejandra
-    nushell
-    helm-ls
-    pre-commit
-    pyright
-    black
-    colima
     act
-    kubernetes-helm
+    alejandra
+    black
+    cargo-tarpaulin
+    colima
+    git
+    helm-ls
+    just
     kind
     kubectl
+    kubernetes-helm
+    nushell
+    pre-commit
+    pyright
     tilt
-    cargo-tarpaulin
-    just
   ];
 
   enterShell = ''
