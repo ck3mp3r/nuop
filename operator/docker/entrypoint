@@ -1,13 +1,15 @@
 #!/usr/bin/env nu
 
-if ($env.NUOP_MODE == "init") {
+# Get NUOP_MODE, defaulting to "standard"
+let mode = ($env | get --optional NUOP_MODE | default "standard")
+
+if $mode == "init" {
   init-sources
 } else {
   # Install CRDs before starting operator (Standard mode only)
-  let mode = ($env | get --optional NUOP_MODE | default "standard")
   if $mode == "standard" {
     install-crds
   }
-  
+
   operator
 }

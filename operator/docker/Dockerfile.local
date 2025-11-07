@@ -1,0 +1,41 @@
+# Multi-stage build for local development using Nix builder
+# This builds the operator binary inside a Nix container (Linux)
+
+FROM nixos/nix:latest AS builder
+
+WORKDIR /build
+
+# Enable flakes and nix-command
+RUN echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+
+# Copy all necessary files for nix build
+COPY flake.nix flake.lock Cargo.toml Cargo.lock ./
+COPY nix ./nix
+COPY src ./src
+
+# Build the operator binary with Nix
+RUN nix build --print-build-logs
+
+# Final stage
+FROM ghcr.io/nushell/nushell:0.108.0-alpine AS final
+
+USER root
+RUN apk add \
+  git \
+  github-cli \
+  kubectl \
+  --no-cache
+
+# Copy the binary from Nix build result
+COPY --from=builder /build/result/bin/operator /bin/operator
+COPY ./docker/entrypoint /bin/
+COPY ./docker/init-sources /bin/
+COPY ./docker/install-crds /bin/
+COPY ./scripts /scripts
+
+RUN chown -R nushell:nushell /scripts
+
+USER nushell
+WORKDIR /scripts
+
+ENTRYPOINT ["entrypoint"]
