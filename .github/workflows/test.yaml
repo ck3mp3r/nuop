@@ -52,10 +52,6 @@ jobs:
 
       - uses: DeterminateSystems/flake-checker-action@main
 
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
-
       - name: run tests
         run: |
           nix develop .#ci --no-pure-eval --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
