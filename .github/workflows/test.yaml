@@ -6,7 +6,8 @@ on:
   push:
     paths:
       - flake.*
-      - devenv.nix
+      - nix/dev.nix
+      - nix/ci.nix
       - operator/Cargo.*
       - operator/flake.*
       - operator/src/**
