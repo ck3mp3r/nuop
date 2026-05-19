@@ -29,7 +29,19 @@
 
     # Define shell functions for common operations
     kind-start() {
-      nu -c "if (kind get clusters | find 'nuop' | is-empty) { kind create cluster --name nuop --config ./kind/kind-cluster.yaml; kind get kubeconfig -n nuop | from yaml | reject clusters.0.cluster.certificate-authority-data | upsert clusters.0.cluster.insecure-skip-tls-verify true | upsert clusters.0.cluster.server https://127.0.0.1:7543 | to yaml | save -f ./kind/kube.config; kubectx kind-nuop }"
+      nu -c '
+        if (kind get clusters | find "nuop" | is-empty) {
+          kind create cluster --name nuop --config ./kind/kind-cluster.yaml
+          kind get kubeconfig -n nuop
+          | from yaml
+          | reject clusters.0.cluster.certificate-authority-data
+          | upsert clusters.0.cluster.insecure-skip-tls-verify true
+          | upsert clusters.0.cluster.server https://127.0.0.1:7543
+          | to yaml
+          | save -f ./kind/kube.config
+          kubectx kind-nuop
+        }
+      '
     }
 
     op-coverage() { make coverage; }
