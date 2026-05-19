@@ -22,7 +22,7 @@ This guide covers setting up your development environment and working with the N
    cargo --version
    nu --version
    kind --version
-   
+
    # Run tests
    op-tests
    ```
@@ -87,7 +87,7 @@ op-coverage
 1. **Start local cluster**: `kind-start`
 2. **Make code changes** in `operator/src/`
 3. **Test changes**: `op-tests`
-4. **Build container**: `op-build` 
+4. **Build container**: `op-build`
 5. **Deploy locally**: Apply example configurations to test
 
 ## Nix Flake Structure
@@ -98,7 +98,7 @@ The project provides multiple development shells:
 # Full development environment (default)
 nix develop
 
-# Minimal CI environment (faster, fewer dependencies)  
+# Minimal CI environment (faster, fewer dependencies)
 nix develop .#ci
 
 # Show all available outputs

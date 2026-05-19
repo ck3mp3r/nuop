@@ -61,7 +61,7 @@ Validate your script configuration meets requirements:
 def test_config [script_path: string] {
     print $"Testing config for ($script_path)"
     let result = (echo '{}' | nu $"($script_path)/mod.nu" config | from yaml)
-    
+
     # Validate required fields
     if ($result.name | is-empty) {
         error make {msg: "Missing required field: name"}
@@ -72,7 +72,7 @@ def test_config [script_path: string] {
     if ($result.version | is-empty) {
         error make {msg: "Missing required field: version"}
     }
-    
+
     print "✅ Config test passed"
 }
 
@@ -80,12 +80,12 @@ def test_config [script_path: string] {
 def test_reconcile [script_path: string, test_data: string] {
     print $"Testing reconcile for ($script_path)"
     let result = (cat $test_data | nu $"($script_path)/mod.nu" reconcile | complete)
-    
+
     # Check exit code (0 or 2 are valid)
     if $result.exit_code not-in [0, 2] {
         error make {msg: $"Invalid exit code: ($result.exit_code)"}
     }
-    
+
     print "✅ Reconcile test passed"
 }
 ```

@@ -2,7 +2,6 @@
   description = "Nushell Operator";
 
   inputs = {
-    devenv.url = "github:cachix/devenv";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs";
     fenix = {
@@ -29,40 +28,50 @@
           fenix = inputs.fenix;
           nixpkgs = inputs.nixpkgs;
         };
+
+        # Import shell configurations
+        devShellConfig = import ./nix/dev.nix {inherit pkgs;};
+        ciShellConfig = import ./nix/ci.nix {inherit pkgs;};
+
+        # Helper to create a shell from config
+        mkShellFromConfig = config:
+          pkgs.mkShellNoCC {
+            packages =
+              config.packages
+              ++ [
+                operatorPackages.toolchain
+              ];
+
+            shellHook = ''
+              ${config.enterShell}
+              ${config.shellHook or ""}
+            '';
+          }
+          // {
+            inherit (config) env;
+          };
       in {
         packages = operatorPackages;
 
-        devShells.default = inputs.devenv.lib.mkShell {
-          inherit inputs pkgs;
-          modules = [
-            (import ./devenv.nix)
-            {
-              packages = [
-                operatorPackages.toolchain
-              ];
-
-              env = {
+        devShells.default = mkShellFromConfig (devShellConfig
+          // {
+            packages = devShellConfig.packages ++ [operatorPackages.toolchain];
+            env =
+              devShellConfig.env
+              // {
                 RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
               };
-            }
-          ];
-        };
+          });
 
-        devShells.ci = inputs.devenv.lib.mkShell {
-          inherit inputs pkgs;
-          modules = [
-            (import ./devenv-ci.nix)
-            {
-              packages = [
-                operatorPackages.toolchain
-              ];
-
-              env = {
+        devShells.ci = mkShellFromConfig (ciShellConfig
+          // {
+            packages = ciShellConfig.packages ++ [operatorPackages.toolchain];
+            env =
+              ciShellConfig.env
+              // {
                 RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
               };
-            }
-          ];
-        };
+          });
 
         formatter = pkgs.alejandra;
       };

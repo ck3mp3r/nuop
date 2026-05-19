@@ -7,8 +7,15 @@ windows:
   - name: code
     panes:
       - name: Editor
+        flex: 5
         commands:
           - command: ^$env.EDITOR
+      - name: Opencode
+        flex: 3
+        commands:
+          - command: ^opencode
+            args:
+              - --port
 
   - name: misc
     flex_direction: row

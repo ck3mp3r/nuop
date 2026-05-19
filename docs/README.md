@@ -9,7 +9,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices
 - **[Development Setup](DEVELOPMENT.md)** - Environment setup, workflow, and troubleshooting
 
-### For Developers  
+### For Developers
 - **[Development Setup](DEVELOPMENT.md)** - Environment setup and workflow
 - **[Contributing](CONTRIBUTING.md)** - Contribution guidelines and standards
 - **[Script Development](SCRIPT-DEVELOPMENT.md)** - Complete guide to writing operator scripts

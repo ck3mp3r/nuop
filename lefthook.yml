@@ -1,0 +1,33 @@
+pre-commit:
+  parallel: true
+  commands:
+    alejandra:
+      glob: "*.nix"
+      run: alejandra {staged_files}
+      stage_fixed: true
+    cargo-fmt:
+      glob: "*.rs"
+      root: "operator/"
+      run: cargo fmt --all
+      stage_fixed: true
+    check-merge-conflicts:
+      glob: "*"
+      run: git diff --check --cached
+    end-of-file-fixer:
+      glob: "*"
+      run: |
+        for file in {staged_files}; do
+          if [ -s "$file" ] && [ -z "$(tail -c 1 "$file")" ]; then
+            continue
+          elif [ -s "$file" ]; then
+            echo >> "$file"
+            git add "$file"
+          fi
+        done
+    trim-trailing-whitespace:
+      glob: "*"
+      run: |
+        for file in {staged_files}; do
+          sed -i '' -e 's/[[:space:]]*$//' "$file"
+          git add "$file"
+        done

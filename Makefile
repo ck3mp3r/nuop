@@ -6,9 +6,9 @@ tests:
 	cd operator && cargo test
 
 build:
-	cd operator && docker build --debug -f docker/Dockerfile . -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION) 
-	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n nuop 
-	
+	cd operator && docker build --debug -f docker/Dockerfile . -t $(REGISTRY)/$(IMAGE_NAME):$(VERSION)
+	kind load docker-image $(REGISTRY)/$(IMAGE_NAME):latest -n nuop
+
 buildx:
 	cd operator && docker buildx create --name mybuilder --use || true
 	cd operator && docker buildx inspect --bootstrap
@@ -28,7 +28,7 @@ crds:
 
 coverage:
 	cd operator && cargo tarpaulin --out Html
-	
+
 act-test:
 	@act push \
 		--rm \
