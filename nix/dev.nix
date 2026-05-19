@@ -16,11 +16,11 @@
   ];
 
   env = {
-    KUBECONFIG = "$PWD/kind/kube.config";
+    KUBECONFIG = "$PWD/.direnv/kind/kube.config";
   };
 
   enterShell = ''
-    mkdir -p ./kind
+    mkdir -p .direnv/kind
   '';
 
   shellHook = ''
