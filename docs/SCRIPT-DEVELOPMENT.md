@@ -61,18 +61,18 @@ def "main config" [] {
 # Reconcile function - handles create/update events
 def "main reconcile" [] {
     let resource = ($in | from yaml)  # Parse YAML input from Kubernetes
-    
+
     print $"Processing ($resource.metadata.name) in ($resource.metadata.namespace)"
-    
+
     # Your reconciliation logic here
     # Use kubectl commands to make changes
     # Return exit codes:
     # 0 = no changes made
     # 2 = changes made
-    
+
     # Example: Add a label using kubectl
     let result = (kubectl label configmap $resource.metadata.name processed=true -n $resource.metadata.namespace | complete)
-    
+
     if $result.exit_code == 0 {
         print "✅ Added processed label"
         exit 2  # Indicate changes were made
@@ -85,15 +85,15 @@ def "main reconcile" [] {
 # Finalize function - handles resource deletion
 def "main finalize" [] {
     let resource = ($in | from yaml)  # Parse YAML input from Kubernetes
-    
+
     print $"Finalizing ($resource.metadata.name) in ($resource.metadata.namespace)"
-    
+
     # Cleanup logic here - remove any managed resources
     # The operator will automatically remove finalizers
-    
+
     # Example: Delete related configmaps
     kubectl delete configmap -l managed-by=$resource.metadata.name -n $resource.metadata.namespace
-    
+
     print "✅ Cleanup completed"
     exit 0
 }
@@ -171,24 +171,24 @@ Copy resources across namespaces:
 ```nushell
 def "main reconcile" [] {
     let resource = $in
-    
+
     # Get target namespaces from annotation
-    let targets = ($resource.metadata.annotations."replicate-to" 
-                   | default "" 
+    let targets = ($resource.metadata.annotations."replicate-to"
+                   | default ""
                    | split row ",")
-    
+
     for namespace in $targets {
         # Create replica in target namespace
-        let replica = ($resource 
+        let replica = ($resource
                       | upsert metadata.namespace $namespace
                       | upsert metadata.name $"($resource.metadata.name)-replica"
                       | reject metadata.resourceVersion
                       | reject metadata.uid)
-        
+
         # Apply replica (you would use kubectl or Kubernetes API here)
         print $"Would create replica in ($namespace)"
     }
-    
+
     exit 0
 }
 ```
@@ -200,17 +200,17 @@ Process resources based on specific conditions:
 ```nushell
 def "main reconcile" [] {
     let resource = $in
-    
+
     # Only process resources with specific label
     if ($resource.metadata.labels."process-me"? | default "false") != "true" {
         exit 0
     }
-    
+
     # Check if already processed
     if ("processed" in ($resource.metadata.annotations | default {})) {
         exit 0
     }
-    
+
     # Do processing...
     let updated = ($resource | upsert metadata.annotations.processed "true")
     $updated | to json
@@ -225,20 +225,20 @@ Handle errors gracefully:
 ```nushell
 def "main reconcile" [] {
     let resource = $in
-    
+
     try {
         # Risky operation
         let result = (some_external_command)
-        
+
         # Success - update resource
         let updated = ($resource | upsert status.result $result)
         $updated | to json
         exit 2
-        
+
     } catch { |err|
         # Log error
         print $"Error processing resource: ($err.msg)"
-        
+
         # Update resource with error status
         let updated = ($resource | upsert status.error $err.msg)
         $updated | to json

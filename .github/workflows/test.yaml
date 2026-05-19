@@ -6,7 +6,8 @@ on:
   push:
     paths:
       - flake.*
-      - devenv.nix
+      - nix/dev.nix
+      - nix/ci.nix
       - operator/Cargo.*
       - operator/flake.*
       - operator/src/**
@@ -51,10 +52,6 @@ jobs:
           flakehub: false
 
       - uses: DeterminateSystems/flake-checker-action@main
-
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
 
       - name: run tests
         run: |

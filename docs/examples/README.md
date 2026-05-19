@@ -22,7 +22,7 @@ kubectl apply -f config-replicator.yaml
 # (Example ConfigMap is included in the file)
 ```
 
-### 2. secret-cloner.yaml  
+### 2. secret-cloner.yaml
 **Purpose**: Demonstrates Secret cloning across namespaces using the built-in secret-cloner script.
 
 **Features shown**:
@@ -102,7 +102,7 @@ kubectl logs -l app.kubernetes.io/name=nuop
 
 ### Testing Secret Cloning
 ```bash
-# Apply the secret-cloner example  
+# Apply the secret-cloner example
 kubectl apply -f secret-cloner.yaml
 
 # The example includes a test Secret - check if it gets cloned
@@ -117,7 +117,7 @@ kubectl logs -l app.kubernetes.io/name=nuop
 ### Manager + Managed Mode
 All examples use the Manager + Managed deployment mode where:
 - A manager watches NuOperator custom resources
-- The manager creates managed operator deployments 
+- The manager creates managed operator deployments
 - Scripts are fetched from the nuop repository
 
 ### Real Script Integration
@@ -149,7 +149,7 @@ Scripts watch for resources with specific labels:
 To adapt these examples:
 
 1. **Change target resources**: Modify `labelSelectors` in mappings
-2. **Adjust permissions**: Update RBAC rules based on script requirements  
+2. **Adjust permissions**: Update RBAC rules based on script requirements
 3. **Use custom scripts**: Change `sources[].location` to your script repository
 4. **Configure namespaces**: Set target namespaces in resource annotations
 

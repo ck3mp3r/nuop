@@ -12,11 +12,6 @@
   # No shell initialization needed for CI
   enterShell = "";
 
-  # No custom scripts needed for CI
-  scripts = {};
-
-  # No git hooks in CI (handled separately)
-  git-hooks = {
-    hooks = {};
-  };
+  # No shell hook needed for CI
+  shellHook = "";
 }
