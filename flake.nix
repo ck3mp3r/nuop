@@ -2,9 +2,12 @@
   description = "Nushell Operator";
 
   inputs = {
-    devenv.url = "github:cachix/devenv";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-parts.url = "github:hercules-ci/flake-parts";
-    nixpkgs.url = "github:nixos/nixpkgs";
     fenix = {
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";

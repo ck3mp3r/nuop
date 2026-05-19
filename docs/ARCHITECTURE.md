@@ -55,7 +55,7 @@ scripts/
 
 Each script implements three main functions:
 - `main config` - Returns operator metadata and configuration
-- `main reconcile` - Handles resource create/update events  
+- `main reconcile` - Handles resource create/update events
 - `main finalize` - Handles resource deletion events
 
 ### 3. Configuration System
@@ -335,7 +335,7 @@ Each script implements three main functions:
 
 ### Controller Errors
 
-1. **Kubernetes API Errors**: 
+1. **Kubernetes API Errors**:
    - Network failures: Retry with exponential backoff
    - Permission errors: Log and skip resource
    - Resource conflicts: Retry with fresh resource version

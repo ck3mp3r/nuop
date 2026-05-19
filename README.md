@@ -24,7 +24,7 @@ op-tests        # Run tests
 ## ✨ Key Features
 
 - **Script-based Controllers**: Define controllers using Nushell's powerful scripting
-- **Multiple Deployment Modes**: Standard (recommended), Manager, and Managed modes  
+- **Multiple Deployment Modes**: Standard (recommended), Manager, and Managed modes
 - **Flexible Resource Mapping**: Target any Kubernetes resource with selectors
 - **Dynamic Sources**: Fetch scripts from Git repositories or container images
 

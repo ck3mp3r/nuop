@@ -1,0 +1,95 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: greetingrequests.demo.nuop.io
+spec:
+  group: demo.nuop.io
+  names:
+    kind: GreetingRequest
+    listKind: GreetingRequestList
+    plural: greetingrequests
+    singular: greetingrequest
+    shortNames:
+      - gr
+      - greeting
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: "Name of the person or thing to greet"
+                  minLength: 1
+                  maxLength: 100
+                language:
+                  type: string
+                  description: "Language for the greeting"
+                  enum:
+                    - en
+                    - es
+                    - fr
+                    - de
+                    - ja
+                  default: en
+                style:
+                  type: string
+                  description: "Greeting style"
+                  enum:
+                    - formal
+                    - informal
+                  default: informal
+            status:
+              type: object
+              properties:
+                greeting:
+                  type: string
+                  description: "The generated greeting message"
+                configMapName:
+                  type: string
+                  description: "Name of the created ConfigMap"
+                lastUpdated:
+                  type: string
+                  format: date-time
+                  description: "Timestamp of last update"
+                state:
+                  type: string
+                  enum:
+                    - Pending
+                    - Ready
+                    - Failed
+                  description: "Current state of the greeting"
+                message:
+                  type: string
+                  description: "Human-readable status message"
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Name
+          type: string
+          jsonPath: .spec.name
+          description: "Name being greeted"
+        - name: Language
+          type: string
+          jsonPath: .spec.language
+          description: "Language"
+        - name: Greeting
+          type: string
+          jsonPath: .status.greeting
+          description: "Generated greeting"
+        - name: State
+          type: string
+          jsonPath: .status.state
+          description: "Current state"
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
