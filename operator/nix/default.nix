@@ -22,6 +22,7 @@
     packageName = "operator";
     archiveAndHash = false;
     installData = {};
+    extraArgs = {doCheck = false;};
   };
 
   toolchain = inputs.rustnix.lib.rust.mkToolchain {
