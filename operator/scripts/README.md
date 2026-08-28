@@ -158,4 +158,3 @@ To use these scripts:
 3. Apply ConfigMaps or Secrets with the appropriate labels to trigger replication
 
 The operators will automatically detect and manage resources that match their label selectors.
-

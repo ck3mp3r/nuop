@@ -7,22 +7,22 @@ This document provides a comprehensive overview of the Nushell Operator (nuop) a
 The Nushell Operator enables building Kubernetes controllers using Nushell scripts instead of traditional programming languages. It bridges the gap between Kubernetes APIs and shell scripting by providing a framework for script-based reconciliation.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                      │
-│                                                             │
-│  ┌─────────────────┐    ┌─────────────────┐                │
-│  │   Resources     │    │   nuop          │                │
-│  │  (ConfigMaps,   │◄──►│   Operator      │                │
-│  │   Secrets, etc) │    │   Pod(s)        │                │
-│  └─────────────────┘    └─────────────────┘                │
-│                                 │                           │
-│                                 ▼                           │
-│                    ┌─────────────────┐                      │
-│                    │   Nushell       │                      │
-│                    │   Scripts       │                      │
-│                    │  (mod.nu files) │                      │
-│                    └─────────────────┘                      │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│                Kubernetes Cluster              │
+│                                                │
+│  ┌─────────────────┐    ┌─────────────────┐    │
+│  │   Resources     │    │   nuop          │    │
+│  │  (ConfigMaps,   │◄──►│   Operator      │    │
+│  │   Secrets, etc) │    │   Pod(s)        │    │
+│  └─────────────────┘    └─────────────────┘    │
+│                                 │              │
+│                                 ▼              │
+│                    ┌─────────────────┐         │
+│                    │   Nushell       │         │
+│                    │   Scripts       │         │
+│                    │  (mod.nu files) │         │
+│                    └─────────────────┘         │
+└────────────────────────────────────────────────┘
 ```
 
 ## Core Components

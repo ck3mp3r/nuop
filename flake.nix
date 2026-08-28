@@ -2,10 +2,14 @@
   description = "Nushell Operator";
 
   inputs = {
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    fenix = {
-      url = "github:nix-community/fenix";
+    base-nixpkgs.url = "github:ck3mp3r/flakes?dir=base-nixpkgs";
+    nixpkgs.follows = "base-nixpkgs/unstable";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    rustnix = {
+      url = "github:ck3mp3r/flakes?dir=rustnix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -14,24 +18,27 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
 
-      perSystem = {
-        system,
-        pkgs,
-        ...
-      }: let
+      perSystem = {system, ...}: let
+        overlays = [inputs.base-nixpkgs.overlays.default];
+        pkgs = import inputs.nixpkgs {inherit system overlays;};
+
+        cargoToml = fromTOML (builtins.readFile ./operator/Cargo.toml);
+        cargoLock = {lockFile = ./operator/Cargo.lock;};
+
         operatorPackages = import ./operator/nix {
           inherit
-            pkgs
+            inputs
             system
+            pkgs
+            cargoToml
+            cargoLock
+            overlays
             ;
-          overlays = [];
-          fenix = inputs.fenix;
-          nixpkgs = inputs.nixpkgs;
         };
 
         # Import shell configurations
-        devShellConfig = import ./nix/dev.nix {inherit pkgs;};
-        ciShellConfig = import ./nix/ci.nix {inherit pkgs;};
+        devShellConfig = import ./nix/dev.nix {inherit pkgs inputs system;};
+        ciShellConfig = import ./nix/ci.nix {inherit pkgs inputs system;};
 
         # Helper to create a shell from config
         mkShellFromConfig = config:
@@ -51,26 +58,16 @@
             inherit (config) env;
           };
       in {
-        packages = operatorPackages;
+        packages = operatorPackages.packages;
 
         devShells.default = mkShellFromConfig (devShellConfig
           // {
             packages = devShellConfig.packages ++ [operatorPackages.toolchain];
-            env =
-              devShellConfig.env
-              // {
-                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-              };
           });
 
         devShells.ci = mkShellFromConfig (ciShellConfig
           // {
             packages = ciShellConfig.packages ++ [operatorPackages.toolchain];
-            env =
-              ciShellConfig.env
-              // {
-                RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-              };
           });
 
         formatter = pkgs.alejandra;

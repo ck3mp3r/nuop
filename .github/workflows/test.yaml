@@ -9,7 +9,7 @@ on:
       - nix/dev.nix
       - nix/ci.nix
       - operator/Cargo.*
-      - operator/flake.*
+      - operator/nix/**
       - operator/src/**
       - .github/workflows/**
 
@@ -55,4 +55,4 @@ jobs:
 
       - name: run tests
         run: |
-          nix develop .#ci --no-pure-eval --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
+          nix develop .#ci --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored

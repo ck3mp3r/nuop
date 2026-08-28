@@ -52,7 +52,7 @@ in {
       alejandra
       nushell
       helm-ls
-      lefthook
+      prek
       pyright
       black
       colima
@@ -87,6 +87,6 @@ in {
   '';
 
   shellHook = ''
-    lefthook install
+    prek install
   '';
 }
