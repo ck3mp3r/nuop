@@ -237,7 +237,7 @@ spec:
   serviceAccountName: example-operator-sa
   sources:
     - location: https://github.com/your-org/operator-scripts.git?ref=main
-      path: /scripts
+      path: scripts
   mappings:
     - name: configmap-controller
       group: ""

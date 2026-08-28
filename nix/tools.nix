@@ -24,7 +24,7 @@
       cargo tarpaulin --manifest-path operator/Cargo.toml --out Html
     '';
     op-build = pkgs.writeShellScriptBin "op-build" ''
-      cd operator && docker build --debug -f docker/Dockerfile . -t ghcr.io/ck3mp3r/nuop:latest
+      cd operator && docker build --debug -f docker/Dockerfile.dev . -t ghcr.io/ck3mp3r/nuop:latest
       kind load docker-image ghcr.io/ck3mp3r/nuop:latest -n nuop
     '';
     op-buildx = pkgs.writeShellScriptBin "op-buildx" ''

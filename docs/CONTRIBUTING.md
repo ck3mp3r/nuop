@@ -197,12 +197,19 @@ operator/
 
 | Command | Description |
 |---------|-------------|
-| `op-build` | Build operator binary |
+| `op-build` | Build and load the operator Docker image into kind |
+| `op-buildx` | Build and push multi-arch Docker images |
 | `op-tests` | Run all tests |
 | `op-coverage` | Generate code coverage |
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
 | `op-crds` | Generate CRD manifests |
+| `op-clean` | Clean cargo build artifacts |
+| `cluster-start` | Start colima and the kind cluster |
+| `tilt-up` | Start colima, kind, and tilt |
+| `tilt-down` | Stop tilt |
+| `act-test` | Run the test workflow locally with act |
+| `act-buildx` | Run the buildx workflow locally with act |
 
 | `op-run-*` | Run operator in different modes |
 

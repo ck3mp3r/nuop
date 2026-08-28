@@ -15,4 +15,4 @@ spec:
       kind: ConfigMap
   sources:
     - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
-      path: /scripts
+      path: scripts

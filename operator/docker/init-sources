@@ -17,7 +17,7 @@ def fetch_source [config] {
 
   let location = $config.location
 
-  let path = $"($SCRIPTS_PATH)/($config.path)"
+  let path = ($SCRIPTS_PATH | path join $config.path)
   mkdir $path
 
   let tmp_dir = mk_temp_dir
@@ -67,7 +67,11 @@ def fetch_source [config] {
     $tmp_dir
   }
 
-  cp -r $source_dir $path
+  # Copy contents of source_dir into path (idempotent across re-runs)
+  let entries = (glob ($source_dir | path join "*"))
+  for entry in $entries {
+    cp -r $entry $path
+  }
 
   # Validate that script directories contain mod.nu files
   try {

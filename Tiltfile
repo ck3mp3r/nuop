@@ -37,7 +37,7 @@ k8s_yaml(helm(
 # k8s_custom_deploy injects the locally-built image into spec.image
 k8s_custom_deploy(
     'nuop-managed',
-    apply_cmd='sed "s|ghcr.io/ck3mp3r/nuop:latest|$TILT_IMAGE_0|" tilt/managed-operator.yaml | kubectl apply -f -',
+    apply_cmd='sed "s|ghcr.io/ck3mp3r/nuop:latest|$TILT_IMAGE_0|" tilt/managed-operator.yaml | kubectl apply -f - -o yaml',
     delete_cmd='kubectl delete -f tilt/managed-operator.yaml --ignore-not-found',
     deps=['tilt/managed-operator.yaml'],
     image_deps=['ghcr.io/ck3mp3r/nuop'],
