@@ -93,23 +93,21 @@ When a `GreetingRequest` is deleted:
 ### Prerequisites
 
 - Kind cluster running (use `cluster-start` from the nix dev shell)
-- Base nuop image built (use `just build`)
+- Base nuop image built (use `op-build`)
 - kubectl configured for kind cluster
 
 ### Build and Deploy
 
 ```bash
 # Build the base operator image first
-just build
+op-build
 
 # Build the test operator image
-just test-build
+cd tests && docker build -t ghcr.io/ck3mp3r/nuop-test:latest .
+kind load docker-image ghcr.io/ck3mp3r/nuop-test:latest -n nuop
 
 # Deploy the operator
-just test-deploy
-
-# Or run everything at once
-just test-run
+kubectl apply -f tests/examples/deployment.yaml
 ```
 
 ### Watch the Operator
@@ -219,9 +217,6 @@ EOF
 
 ```bash
 # Delete all test resources
-just test-clean
-
-# Or manually:
 kubectl delete -f tests/examples/deployment.yaml
 kubectl delete greetingrequests --all
 kubectl delete configmaps -l app.kubernetes.io/managed-by=greeting-operator
@@ -270,8 +265,8 @@ You can use this test as a template for your own operators:
 
 1. **Modify the CRD**: Edit `crds/greetingrequest-crd.yaml` with your spec
 2. **Update the script**: Edit `scripts/greeting-operator/mod.nu` with your logic
-3. **Rebuild**: Run `just test-build`
-4. **Test**: Run `just test-deploy`
+3. **Rebuild**: `cd tests && docker build -t ghcr.io/ck3mp3r/nuop-test:latest .`
+4. **Test**: `kubectl apply -f tests/examples/deployment.yaml`
 
 ## Architecture
 

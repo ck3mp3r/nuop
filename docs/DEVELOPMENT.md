@@ -59,10 +59,10 @@ If you prefer not to use direnv:
 
 ```bash
 # Enter development shell manually
-nix develop --no-pure-eval
+nix develop
 
 # Or use the minimal CI shell
-nix develop .#ci --no-pure-eval
+nix develop .#ci
 ```
 
 ## Building and Testing
