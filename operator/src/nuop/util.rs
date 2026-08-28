@@ -1,6 +1,6 @@
 use core::fmt::{self, Display, Formatter};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::OwnerReference;
-use kube::{Error, api::ResourceExt, core::ErrorResponse};
+use kube::{Error, api::ResourceExt, core::Status};
 
 pub const NUOP_MODE: &str = "NUOP_MODE";
 pub enum NuopMode {
@@ -49,10 +49,5 @@ pub(crate) fn generate_owner_reference<T: kube::Resource<DynamicType = ()>>(
 }
 
 pub fn to_kube_error(reason: &str, message: &str, code: u16) -> Error {
-    Error::Api(ErrorResponse {
-        status: "Failure".to_string(),
-        message: message.to_string(),
-        reason: reason.to_string(),
-        code,
-    })
+    Error::Api(Status::failure(message, reason).with_code(code).boxed())
 }

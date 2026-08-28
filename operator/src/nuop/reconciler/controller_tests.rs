@@ -62,7 +62,7 @@ fn create_test_object(
             None
         },
         deletion_timestamp: if deleting {
-            Some(Time(chrono::Utc::now()))
+            Some(Time(k8s_openapi::jiff::Timestamp::now()))
         } else {
             None
         },
@@ -341,12 +341,11 @@ async fn test_error_policy() {
         true,
         false,
     ));
-    let error = Error::Api(kube::core::ErrorResponse {
-        status: "Failure".to_string(),
-        message: "Test error".to_string(),
-        reason: "TestReason".to_string(),
-        code: 500,
-    });
+    let error = Error::Api(
+        kube::core::Status::failure("Test error", "TestReason")
+            .with_code(500)
+            .boxed(),
+    );
 
     let result = error_policy(obj, &error, state);
     assert_eq!(result, Action::requeue(Duration::from_secs(300)));

@@ -1,0 +1,41 @@
+---
+# Target namespace for replication demo
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nuop-demo
+
+---
+# Example ConfigMap to replicate (config-replicator)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: nuop
+  labels:
+    app.kubernetes.io/replicate: "yes"
+  annotations:
+    app.kubernetes.io/target-namespaces: "nuop-demo"
+    app.kubernetes.io/target-method: "include"
+data:
+  config.yaml: |
+    app:
+      environment: development
+      debug: true
+
+---
+# Example Secret to replicate (secret-cloner)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: database-credentials
+  namespace: nuop
+  labels:
+    app.kubernetes.io/replicate: "yes"
+  annotations:
+    app.kubernetes.io/target-namespaces: "nuop-demo"
+    app.kubernetes.io/target-method: "include"
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm

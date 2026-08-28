@@ -1,0 +1,29 @@
+# Build stage - compile Rust for linux
+FROM rust:1.98-alpine AS builder
+RUN apk add --no-cache musl-dev
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+RUN cargo build --release
+
+# Runtime stage
+FROM ghcr.io/nushell/nushell:0.108.0-alpine AS final
+
+USER root
+RUN apk add \
+  git \
+  github-cli \
+  kubectl \
+  --no-cache
+
+COPY --from=builder /app/target/release/operator /bin/
+COPY ./docker/entrypoint /bin/
+COPY ./docker/init-sources /bin/
+COPY ./scripts /scripts
+
+RUN chown -R nushell:nushell /scripts
+
+USER nushell
+WORKDIR /scripts
+
+ENTRYPOINT ["entrypoint"]

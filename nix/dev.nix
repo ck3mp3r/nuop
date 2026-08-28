@@ -1,4 +1,31 @@
 {pkgs, ...}: let
+  tools = import ./tools.nix {inherit pkgs;};
+
+  cluster-start = pkgs.writeScriptBin "cluster-start" ''
+    #!/usr/bin/env nu
+
+    let colima_running = (colima status | complete | get exit_code) == 0
+    if not $colima_running {
+      print "Starting colima (8 CPUs, 24GB memory)..."
+      colima start --cpu 8 --memory 24
+    } else {
+      print "Colima already running"
+    }
+
+    kind-start
+  '';
+
+  tilt-up = pkgs.writeScriptBin "tilt-up" ''
+    #!/usr/bin/env nu
+    cluster-start
+    tilt up
+  '';
+
+  tilt-down = pkgs.writeScriptBin "tilt-down" ''
+    #!/usr/bin/env nu
+    tilt down
+  '';
+
   kind-start = pkgs.writeScriptBin "kind-start" ''
     #!/usr/bin/env nu
 
@@ -25,15 +52,6 @@
       print $"Cluster ($cluster_name) already exists"
     }
   '';
-
-  op-coverage = pkgs.writeShellScriptBin "op-coverage" "make coverage";
-  op-clean = pkgs.writeShellScriptBin "op-clean" "make clean";
-  op-crds = pkgs.writeShellScriptBin "op-crds" "make crds";
-  op-build = pkgs.writeShellScriptBin "op-build" "make build";
-  op-tests = pkgs.writeShellScriptBin "op-tests" "make tests";
-  act-test = pkgs.writeShellScriptBin "act-test" "make act-test";
-  op-clippy = pkgs.writeShellScriptBin "op-clippy" "make clippy";
-  op-fmt = pkgs.writeShellScriptBin "op-fmt" "make fmt";
 
   op-run-manager = pkgs.writeShellScriptBin "op-run-manager" ''
     cd "$PWD/operator" && LOG_LEVEL=debug NUOP_MODE=manager cargo run --bin operator
@@ -64,15 +82,20 @@ in {
       cargo-tarpaulin
     ]
     ++ [
+      cluster-start
       kind-start
-      op-coverage
-      op-clean
-      op-crds
-      op-build
-      op-tests
-      act-test
-      op-clippy
-      op-fmt
+      tilt-up
+      tilt-down
+      tools.op-coverage
+      tools.op-clean
+      tools.op-crds
+      tools.op-build
+      tools.op-tests
+      tools.act-test
+      tools.op-clippy
+      tools.op-fmt
+      tools.op-buildx
+      tools.act-buildx
       op-run-manager
       op-run-standard
       op-run-managed

@@ -71,7 +71,14 @@ pub async fn reconcile(obj: Arc<NuOperator>, ctx: Arc<State>) -> Result<Action, 
             service_account_name,
             annotations: {
                 let mut annotations = std::collections::BTreeMap::new();
-                annotations.insert("nuop.hash".to_string(), format!("{:x}", hasher.finalize()));
+                annotations.insert(
+                    "nuop.hash".to_string(),
+                    hasher
+                        .finalize()
+                        .iter()
+                        .map(|b| format!("{:02x}", b))
+                        .collect::<String>(),
+                );
                 Some(annotations)
             },
         },

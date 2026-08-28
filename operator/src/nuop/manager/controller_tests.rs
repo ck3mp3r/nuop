@@ -4,7 +4,7 @@ use crate::nuop::manager::{
 
 use k8s_openapi::api::core::v1::EnvVar;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::error::ErrorResponse;
+use kube::core::Status;
 use kube::runtime::controller::Action;
 use kube::{Client, Error as KubeError, client::Body};
 use std::sync::Arc;
@@ -27,12 +27,11 @@ async fn test_error_policy_returns_requeue_action() {
     });
 
     let ctx = Arc::new(State::new(client));
-    let error = KubeError::Api(ErrorResponse {
-        status: "Failure".to_string(),
-        message: "Test error".to_string(),
-        reason: "TestFailure".to_string(),
-        code: 500,
-    });
+    let error = KubeError::Api(
+        Status::failure("Test error", "TestFailure")
+            .with_code(500)
+            .boxed(),
+    );
 
     let action = error_policy(nuoperator, &error, ctx);
 
@@ -55,22 +54,20 @@ async fn test_error_policy_with_different_error_types() {
 
     let ctx = Arc::new(State::new(client));
 
-    let api_error = KubeError::Api(ErrorResponse {
-        status: "Failure".to_string(),
-        message: "API error".to_string(),
-        reason: "BadRequest".to_string(),
-        code: 400,
-    });
+    let api_error = KubeError::Api(
+        Status::failure("API error", "BadRequest")
+            .with_code(400)
+            .boxed(),
+    );
 
     let action = error_policy(nuoperator.clone(), &api_error, ctx.clone());
     assert_eq!(action, Action::requeue(Duration::from_secs(60)));
 
-    let not_found_error = KubeError::Api(ErrorResponse {
-        status: "Failure".to_string(),
-        message: "Resource not found".to_string(),
-        reason: "NotFound".to_string(),
-        code: 404,
-    });
+    let not_found_error = KubeError::Api(
+        Status::failure("Resource not found", "NotFound")
+            .with_code(404)
+            .boxed(),
+    );
 
     let action = error_policy(nuoperator, &not_found_error, ctx);
     assert_eq!(action, Action::requeue(Duration::from_secs(60)));

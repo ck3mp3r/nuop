@@ -1,0 +1,64 @@
+---
+# Managed-mode NuOperator example.
+# The manager (helm chart, deployment.nuopMode=manager) watches this CR and
+# generates a child deployment that fetches the config-replicator script from
+# the git source and runs it in managed mode.
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: config-replicator
+  namespace: nuop
+spec:
+  # Tilt injects the locally-built image via k8s_custom_deploy (image_deps)
+  image: ghcr.io/ck3mp3r/nuop:latest
+  serviceAccountName: nuop-managed-sa
+  env:
+    - name: LOG_LEVEL
+      value: debug
+  mappings:
+    - name: config-replicator
+      group: ""
+      version: v1
+      kind: ConfigMap
+      labelSelectors:
+        app.kubernetes.io/replicate: "yes"
+  sources:
+    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
+      path: scripts
+
+---
+# ServiceAccount for the managed child deployment
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nuop-managed-sa
+  namespace: nuop
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nuop-managed
+rules:
+  # ConfigMap permissions for config-replicator
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Namespace permissions for cross-namespace replication
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nuop-managed
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nuop-managed
+subjects:
+  - kind: ServiceAccount
+    name: nuop-managed-sa
+    namespace: nuop

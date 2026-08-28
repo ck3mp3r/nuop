@@ -1,10 +1,19 @@
 # Minimal development environment for CI/CD pipelines
 # Contains only essential dependencies for running tests
-{pkgs, ...}: {
-  packages = with pkgs; [
-    # Essential for script execution tests
-    nushell
-  ];
+{pkgs, ...}: let
+  tools = import ./tools.nix {inherit pkgs;};
+in {
+  packages = with pkgs;
+    [
+      # Essential for script execution tests
+      nushell
+    ]
+    ++ [
+      tools.op-tests
+      tools.op-clippy
+      tools.op-fmt
+      tools.op-crds
+    ];
 
   # Minimal environment setup
   env = {};

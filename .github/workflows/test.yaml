@@ -55,4 +55,4 @@ jobs:
 
       - name: run tests
         run: |
-          nix develop .#ci --command cargo test --manifest-path operator/Cargo.toml -- --include-ignored
+          nix develop .#ci --command op-tests -- --include-ignored
