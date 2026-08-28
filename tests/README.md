@@ -92,7 +92,7 @@ When a `GreetingRequest` is deleted:
 
 ### Prerequisites
 
-- Kind cluster running (use `kind-start` from devenv)
+- Kind cluster running (use `cluster-start` from the nix dev shell)
 - Base nuop image built (use `just build`)
 - kubectl configured for kind cluster
 

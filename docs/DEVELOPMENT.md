@@ -34,7 +34,7 @@ This guide covers setting up your development environment and working with the N
 
 ## Development Environment
 
-The project uses [devenv](https://devenv.sh/) for reproducible development environments with two configurations:
+The project uses Nix flakes for reproducible development environments with two configurations:
 
 - **Default shell** (`nix develop`): Full development environment with all tools
 - **CI shell** (`nix develop .#ci`): Minimal environment for testing only
