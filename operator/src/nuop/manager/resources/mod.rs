@@ -13,5 +13,17 @@ pub(crate) use deployment::generate_deployment;
 mod config_map_tests;
 
 #[cfg(test)]
-#[path = "../../../../test/nuop/manager/resources/deployment.rs"]
-mod deployment_tests;
+#[path = "../../../../test/nuop/manager/resources/deployment/support.rs"]
+mod support;
+
+#[cfg(test)]
+#[path = "../../../../test/nuop/manager/resources/deployment/create_or_patch.rs"]
+mod deployment_create_or_patch_tests;
+
+#[cfg(test)]
+#[path = "../../../../test/nuop/manager/resources/deployment/drift.rs"]
+mod deployment_drift_tests;
+
+#[cfg(test)]
+#[path = "../../../../test/nuop/manager/resources/deployment/generate.rs"]
+mod deployment_generate_tests;
