@@ -147,9 +147,11 @@ nu scripts/config-replicator/mod.nu reconcile   # Handle resource changes
 nu scripts/config-replicator/mod.nu finalize    # Handle resource deletion
 ```
 
+In containers, scripts are at `/sources/<op-name>/scripts/mod.nu`.
+
 ## Usage with Nushell Operator
 
-These scripts are designed to work with the Nushell Operator in Standard Mode, where they are bundled into container images and automatically discovered based on their metadata configuration.
+These scripts are designed to work with the Nushell Operator in Standard Mode. In the container image they are copied to `/sources/<op-name>/scripts/` and discovered by the operator scanning `/sources/`.
 
 To use these scripts:
 

@@ -201,14 +201,14 @@ pub fn generate_volumes_and_mounts(
 
     if !sources.is_empty() {
         volumes.push(Volume {
-            name: "scripts".to_string(),
+            name: "sources".to_string(),
             empty_dir: Some(Default::default()),
             ..Default::default()
         });
 
         mounts.push(VolumeMount {
-            name: "scripts".to_string(),
-            mount_path: "/scripts".to_string(),
+            name: "sources".to_string(),
+            mount_path: "/sources".to_string(),
             ..Default::default()
         });
 

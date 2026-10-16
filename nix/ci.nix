@@ -7,6 +7,7 @@ in {
     [
       # Essential for script execution tests
       nushell
+      cargo-nextest
     ]
     ++ [
       tools.op-tests

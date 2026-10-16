@@ -58,11 +58,11 @@
   '';
 
   op-run-standard = pkgs.writeShellScriptBin "op-run-standard" ''
-    cd "$PWD/operator" && LOG_LEVEL=debug NUOP_SCRIPT_PATH="$PWD/operator/scripts" cargo run --bin operator
+    cd "$PWD/operator" && LOG_LEVEL=debug NUOP_SOURCES_PATH="$PWD/operator/scripts" cargo run --bin operator
   '';
 
   op-run-managed = pkgs.writeShellScriptBin "op-run-managed" ''
-    cd "$PWD/operator" && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH="$PWD/operator/test/mappings" NUOP_SCRIPT_PATH="$PWD/operator/scripts" cargo run --bin operator
+    cd "$PWD/operator" && LOG_LEVEL=debug NUOP_MODE=managed NUOP_MAPPINGS_PATH="$PWD/operator/test/mappings" NUOP_SOURCES_PATH="$PWD/operator/scripts" cargo run --bin operator
   '';
 in {
   packages = with pkgs;
@@ -79,7 +79,8 @@ in {
       kind
       kubectl
       tilt
-      cargo-tarpaulin
+      cargo-llvm-cov
+      cargo-nextest
     ]
     ++ [
       cluster-start
@@ -91,6 +92,7 @@ in {
       tools.op-crds
       tools.op-build
       tools.op-tests
+      tools.op-tests-ci
       tools.act-test
       tools.op-clippy
       tools.op-fmt

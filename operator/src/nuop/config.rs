@@ -1,10 +1,10 @@
 use std::{env, fs, path::PathBuf};
 
-pub const NUOP_SCRIPT_PATH: &str = "NUOP_SCRIPT_PATH";
+pub const NUOP_SOURCES_PATH: &str = "NUOP_SOURCES_PATH";
 pub const NUOP_MAPPINGS_PATH: &str = "NUOP_MAPPINGS_PATH";
 
 pub fn get_script_path() -> String {
-    env::var(NUOP_SCRIPT_PATH).unwrap_or_else(|_| "/scripts".to_string())
+    env::var(NUOP_SOURCES_PATH).unwrap_or_else(|_| "/sources".to_string())
 }
 
 pub fn get_mapping_path() -> String {

@@ -12,6 +12,11 @@ debug = false # Disable debug information
 panic = "abort" # Abort on panic to reduce binary size
 strip = "symbols" # Strip symbols to reduce binary size
 
+[profile.coverage]
+inherits = "test"
+debug = "line-tables-only"
+opt-level = 0
+
 [lib]
 name = "operator"
 path = "src/lib.rs"

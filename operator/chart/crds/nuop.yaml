@@ -5,15 +5,12 @@ metadata:
 spec:
   group: kemper.buzz
   names:
-    categories: []
     kind: NuOperator
     plural: nuoperators
-    shortNames: []
     singular: nuoperator
   scope: Namespaced
   versions:
-  - additionalPrinterColumns: []
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Auto-generated derived type for NuOperatorSpec via `CustomResource`
@@ -27,7 +24,7 @@ spec:
                   description: EnvVar represents an environment variable present in a Container.
                   properties:
                     name:
-                      description: Name of the environment variable. Must be a C_IDENTIFIER.
+                      description: Name of the environment variable. May consist of any printable ASCII characters except '='.
                       type: string
                     value:
                       description: 'Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".'
@@ -63,6 +60,29 @@ spec:
                           required:
                           - fieldPath
                           type: object
+                        fileKeyRef:
+                          description: FileKeyRef selects a key of the env file. Requires the EnvFiles feature gate to be enabled.
+                          properties:
+                            key:
+                              description: The key within the env file. An invalid key will prevent the pod from starting. The keys defined within a source may consist of any printable ASCII characters except '='. During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                              type: string
+                            optional:
+                              description: |-
+                                Specify whether the file or its key must be defined. If the file or key does not exist, then the env var is not published. If optional is set to true and the specified key does not exist, the environment variable will not be set in the Pod's containers.
+
+                                If optional is set to false and the specified key does not exist, an error will be returned during Pod creation.
+                              type: boolean
+                            path:
+                              description: The path within the volume from which to select the file. Must be relative and may not contain the '..' path or start with '..'.
+                              type: string
+                            volumeName:
+                              description: The name of the volume mount containing the env file.
+                              type: string
+                          required:
+                          - key
+                          - path
+                          - volumeName
+                          type: object
                         resourceFieldRef:
                           description: 'Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.'
                           properties:
@@ -71,7 +91,8 @@ spec:
                               type: string
                             divisor:
                               description: Specifies the output format of the exposed resources, defaults to "1"
-                              type: string
+                              nullable: true
+                              x-kubernetes-int-or-string: true
                             resource:
                               description: 'Required: resource to select'
                               type: string
@@ -213,6 +234,13 @@ spec:
                     path:
                       description: path that is to be used for the volume mounts (configs and secrets)
                       type: string
+                    source_type:
+                      default: scripts
+                      description: 'type of source: scripts (default) or crds'
+                      enum:
+                      - scripts
+                      - crds
+                      type: string
                   required:
                   - location
                   - path
@@ -225,4 +253,3 @@ spec:
         type: object
     served: true
     storage: true
-    subresources: {}

@@ -2,7 +2,10 @@
   # Shared tools available in both dev and CI shells
   shared = {
     op-tests = pkgs.writeShellScriptBin "op-tests" ''
-      cargo test --manifest-path operator/Cargo.toml "$@"
+      cargo nextest run --manifest-path operator/Cargo.toml "$@"
+    '';
+    op-tests-ci = pkgs.writeShellScriptBin "op-tests-ci" ''
+      cargo nextest run --profile ci --manifest-path operator/Cargo.toml
     '';
     op-clippy = pkgs.writeShellScriptBin "op-clippy" ''
       cargo clippy --manifest-path operator/Cargo.toml -- -D warnings
@@ -21,7 +24,7 @@
       cargo clean --manifest-path operator/Cargo.toml
     '';
     op-coverage = pkgs.writeShellScriptBin "op-coverage" ''
-      cargo tarpaulin --manifest-path operator/Cargo.toml --out Html
+      cargo llvm-cov --manifest-path operator/Cargo.toml --html --output-dir coverage/ --ignore-filename-regex '(/test/|/test$)'
     '';
     op-build = pkgs.writeShellScriptBin "op-build" ''
       cd operator && docker build --debug -f docker/Dockerfile.dev . -t ghcr.io/ck3mp3r/nuop:latest

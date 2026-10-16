@@ -17,18 +17,18 @@ fn create_test_client() -> Client {
 
 fn get_test_mappings() -> Vec<PathBuf> {
     vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/deployment-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/service-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/duplicate-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/pod-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/deployment-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/service-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/duplicate-mapping.yaml"),
     ]
 }
 
 fn get_test_scripts() -> Vec<PathBuf> {
     vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/deployment-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/service-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/deployment-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/service-script/mod.nu"),
     ]
 }
 
@@ -56,9 +56,9 @@ async fn test_with_duplicate_kinds() {
 
     // Include duplicate script that has same group/kind/version as deployment-script
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/deployment-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/duplicate-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/deployment-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/duplicate-script/mod.nu"),
     ];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -77,12 +77,12 @@ async fn test_with_invalid_mapping_file() {
     let client = create_test_client();
 
     let mappings = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/invalid-mapping.yaml"), // Invalid YAML
+        PathBuf::from("test/fixtures/managed/mappings/pod-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/invalid-mapping.yaml"), // Invalid YAML
     ];
 
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu",
+        "test/fixtures/managed/scripts/pod-script/mod.nu",
     )];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -101,12 +101,12 @@ async fn test_with_nonexistent_mapping_file() {
     let client = create_test_client();
 
     let mappings = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/nonexistent.yaml"), // File doesn't exist
+        PathBuf::from("test/fixtures/managed/mappings/pod-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/nonexistent.yaml"), // File doesn't exist
     ];
 
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu",
+        "test/fixtures/managed/scripts/pod-script/mod.nu",
     )];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -126,8 +126,8 @@ async fn test_with_invalid_script_config() {
     let mappings = get_test_mappings();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/invalid-config-script/mod.nu"), // Returns invalid config
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/invalid-config-script/mod.nu"), // Returns invalid config
     ];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -147,8 +147,8 @@ async fn test_with_script_without_matching_mapping() {
     let mappings = get_test_mappings();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/no-mapping-script/mod.nu"), // No matching mapping
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/no-mapping-script/mod.nu"), // No matching mapping
     ];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -168,8 +168,8 @@ async fn test_with_nonexistent_script() {
     let mappings = get_test_mappings();
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/nonexistent-script/mod.nu"), // Doesn't exist
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/nonexistent-script/mod.nu"), // Doesn't exist
     ];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -225,11 +225,11 @@ async fn test_mapping_overrides_script_config() {
 
     // The pod-mapping.yaml has different selectors and requeue times than pod-script.nu config
     let mappings = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml",
+        "test/fixtures/managed/mappings/pod-mapping.yaml",
     )];
 
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu",
+        "test/fixtures/managed/scripts/pod-script/mod.nu",
     )];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -253,11 +253,11 @@ async fn test_partial_mapping_overrides() {
 
     // The service-mapping.yaml only has basic info, no selectors or requeue overrides
     let mappings = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/mappings/service-mapping.yaml",
+        "test/fixtures/managed/mappings/service-mapping.yaml",
     )];
 
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/scripts/service-script/mod.nu",
+        "test/fixtures/managed/scripts/service-script/mod.nu",
     )];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -275,10 +275,10 @@ async fn test_partial_mapping_overrides() {
 async fn test_controller_task_spawning() {
     let client = create_test_client();
     let mappings = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml",
+        "test/fixtures/managed/mappings/pod-mapping.yaml",
     )];
     let scripts = vec![PathBuf::from(
-        "src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu",
+        "test/fixtures/managed/scripts/pod-script/mod.nu",
     )];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);
@@ -300,15 +300,15 @@ async fn test_multiple_valid_controllers() {
 
     // Use all valid mappings and scripts
     let mappings = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/pod-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/deployment-mapping.yaml"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/mappings/service-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/pod-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/deployment-mapping.yaml"),
+        PathBuf::from("test/fixtures/managed/mappings/service-mapping.yaml"),
     ];
 
     let scripts = vec![
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/pod-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/deployment-script/mod.nu"),
-        PathBuf::from("src/nuop/reconciler/managed_tests/scripts/service-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/pod-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/deployment-script/mod.nu"),
+        PathBuf::from("test/fixtures/managed/scripts/service-script/mod.nu"),
     ];
 
     let controllers = get_managed_controllers(&client, &mappings, &scripts);

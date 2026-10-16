@@ -8,8 +8,19 @@ pub struct Source {
     pub(crate) location: String,
     /// path that is to be used for the volume mounts (configs and secrets)
     pub(crate) path: String,
+    /// type of source: scripts (default) or crds
+    #[serde(default)]
+    pub(crate) source_type: SourceType,
     /// credentials to be used to fetch source from location
     pub(crate) credentials: Option<Credentials>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SourceType {
+    #[default]
+    Scripts,
+    Crds,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]

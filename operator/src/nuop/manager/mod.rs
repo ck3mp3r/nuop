@@ -11,4 +11,5 @@ pub use model::Source;
 use state::State;
 
 #[cfg(test)]
+#[path = "../../../test/nuop/manager/controller.rs"]
 mod controller_tests;
