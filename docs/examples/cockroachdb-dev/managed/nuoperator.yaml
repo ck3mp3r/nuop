@@ -2,10 +2,10 @@
 # CockroachDB Dev Operator — Managed Mode
 #
 # The manager fetches the operator script from the nuop repository and the
-# CrdbCluster CRD from the cockroach-operator repository. Both sources share
-# path: cockroachdb-dev, so the script lands in /sources/cockroachdb-dev/scripts/
-# and the CRD in /sources/cockroachdb-dev/crds/. install-crds installs the CRD
-# before the operator starts.
+# CrdbCluster CRD from the CockroachDB operator Helm charts repository. Both
+# sources share path: cockroachdb-dev, so the script lands in
+# /sources/cockroachdb-dev/scripts/ and the CRD in /sources/cockroachdb-dev/crds/.
+# install-crds installs the CRD before the operator starts.
 #
 # Apply the RBAC from ../rbac.yaml first.
 
@@ -24,12 +24,12 @@ spec:
     - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/cockroachdb-dev/scripts
       path: cockroachdb-dev
       source_type: scripts
-    # CrdbCluster CRD from the cockroach-operator repository
-    - location: https://github.com/cockroachdb/cockroach-operator.git?ref=master&dir=config/crd/bases
+    # CrdbCluster CRD from the CockroachDB operator Helm charts repository
+    - location: https://github.com/cockroachdb/helm-charts.git?ref=master&dir=cockroachdb-operator/charts/operator/manifests/crds
       path: cockroachdb-dev
       source_type: crds
   mappings:
     - name: cockroachdb-dev
       group: crdb.cockroachlabs.com
-      version: v1alpha1
+      version: v1beta1
       kind: CrdbCluster

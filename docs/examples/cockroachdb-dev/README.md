@@ -1,12 +1,12 @@
 # CockroachDB Dev Operator
 
-The CockroachDB Dev Operator reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1alpha1`) for local development. It is a ready-to-use Nushell operator script for the Nushell Operator (nuop).
+The CockroachDB Dev Operator reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1beta1`) for local development. It is a ready-to-use Nushell operator script for the Nushell Operator (nuop).
 
-It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator). It watches the same CRD and produces the same external interface, so Helm charts that target a CockroachDB cluster work the same in development and production.
+It is a lightweight alternative to the [CockroachDB operator](https://github.com/cockroachdb/helm-charts), deployed via Helm charts from the `cockroachdb/helm-charts` repository. It watches the same CRD and produces the same external interface, so Helm charts that target a CockroachDB cluster work the same in development and production.
 
 ## Requirements
 
-- The `CrdbCluster` CRD (`crdbclusters.crdb.cockroachlabs.com`) installed in the cluster. The CRD is sourced from the cockroach-operator repository, not from this repository.
+- The `CrdbCluster` CRD (`crdbclusters.crdb.cockroachlabs.com`) installed in the cluster. The CRD is sourced from the `cockroachdb/helm-charts` repository, not from this repository.
 - RBAC that allows the operator to read and patch `crdbclusters` and `crdbclusters/status`, and to manage `statefulsets` and `services`.
 - The Nushell runtime and `kubectl` on the operator's PATH.
 
@@ -16,7 +16,7 @@ The script is mode-agnostic. It does not know whether it runs in Standard or Man
 
 | Resource | Name | Details |
 |----------|------|---------|
-| StatefulSet | `<metadata.name>` | One pod per `spec.nodes` replica, container `db` |
+| StatefulSet | `<metadata.name>` | One pod per node in `spec.regions`, container `db` |
 | Discovery Service | `<metadata.name>` | Headless (`clusterIP: None`), `publishNotReadyAddresses: true` |
 | Public Service | `<metadata.name>-public` | `ClusterIP` |
 
@@ -40,11 +40,11 @@ The StatefulSet runs this command:
   --logtostderr=INFO \
   --cache=256MiB \
   --max-sql-memory=256MiB \
-  [<spec.additionalArgs>] \
+  [<spec.template.spec.startFlags.upsert>] \
   --join=<name>-0.<name>.<namespace>:<grpcPort>,<name>-1.<name>.<namespace>:<grpcPort>,<name>-2.<name>.<namespace>:<grpcPort>
 ```
 
-The join string always seeds the first three pods. The script omits the default join string when `spec.additionalArgs` contains a `--join` argument.
+The join string always seeds the first three pods. The script omits the default join string when `spec.template.spec.startFlags.upsert` contains a `--join` argument.
 
 ## Spec Fields
 
@@ -52,17 +52,17 @@ The script reads these fields and ignores all others:
 
 | Field | Default | Effect |
 |-------|---------|--------|
-| `spec.image.name` | `cockroachdb/cockroach:v23.1.11` | Container image |
-| `spec.nodes` | 3 | StatefulSet replicas |
-| `spec.grpcPort` | 26258 | gRPC port on both services and the container |
-| `spec.httpPort` | 8080 | HTTP port on both services and the container |
-| `spec.sqlPort` | 26257 | SQL port on both services and the container |
-| `spec.dataStore.pvc.spec` | emptyDir | `volumeClaimTemplates` for the `datadir` volume |
-| `spec.additionalArgs` | `[]` | Appended to the `cockroach start` command |
-| `spec.resources` | unset | Container resource requests and limits |
-| `spec.additionalLabels` | `{}` | Merged into all resource labels and the pod selector |
+| `spec.template.spec.image` | `cockroachdb/cockroach:v23.1.11` | Container image |
+| `spec.regions[].nodes` | 3 | StatefulSet replicas (sum of all regions) |
+| `spec.template.spec.grpcPort` | 26258 | gRPC port on both services and the container |
+| `spec.template.spec.httpPort` | 8080 | HTTP port on both services and the container |
+| `spec.template.spec.sqlPort` | 26257 | SQL port on both services and the container |
+| `spec.template.spec.dataStore.volumeClaimTemplate.spec` | emptyDir | `volumeClaimTemplates` for the `datadir` volume |
+| `spec.template.spec.startFlags.upsert` | `[]` | Appended to the `cockroach start` command |
+| `spec.template.spec.resourceRequirements` | unset | Container resource requests and limits |
+| `spec.template.metadata.labels` | `{}` | Merged into all resource labels and the pod selector |
 
-When `spec.dataStore.pvc.spec` is absent, the `datadir` volume is an `emptyDir`.
+When `spec.template.spec.dataStore.volumeClaimTemplate.spec` is absent, the `datadir` volume is an `emptyDir`.
 
 ## Status Fields
 
@@ -70,8 +70,8 @@ The script patches the `status` subresource:
 
 | Field | Values |
 |-------|--------|
-| `status.clusterStatus` | `Starting` while the StatefulSet is not fully ready, `Finished` when all replicas are ready |
-| `status.crdbcontainerimage` | The value of `spec.image.name` |
+| `status.conditions` | A `ClusterReady` condition: `False` while the StatefulSet is not fully ready, `True` when all replicas are ready |
+| `status.image` | The value of `spec.template.spec.image` |
 
 ## Labels
 
@@ -85,7 +85,7 @@ The script applies the same labels as the full operator, so resources are indist
 | `app.kubernetes.io/part-of` | `cockroachdb` |
 | `app.kubernetes.io/managed-by` | `cockroach-operator` |
 
-`spec.additionalLabels` is merged on top. The pod selector uses `name`, `instance`, `component`, and any `spec.additionalLabels`.
+`spec.template.metadata.labels` is merged on top. The pod selector uses `name`, `instance`, `component`, and any `spec.template.metadata.labels`.
 
 ## Finalizers
 
@@ -105,7 +105,7 @@ The `mod.nu` script follows the common operator pattern:
 
 1. **Configuration**: The `main config` function returns operator metadata including the script name, API group, version, target kind, finalizer identifier, and requeue timing.
 
-2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the three desired manifests, patches `status.clusterStatus` to `Starting`, applies the manifests, patches `status.crdbcontainerimage`, and patches `status.clusterStatus` to `Finished` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
+2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the three desired manifests, patches the `ClusterReady` condition to `False`, applies the manifests, patches `status.image`, and patches the `ClusterReady` condition to `True` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
 
 3. **Finalization**: The `main finalize` function handles deletion events. It deletes the StatefulSet and both Services and returns exit code 0.
 
@@ -124,23 +124,28 @@ In containers, scripts are at `/sources/<op-name>/scripts/mod.nu`.
 ## Example CrdbCluster
 
 ```yaml
-apiVersion: crdb.cockroachlabs.com/v1alpha1
+apiVersion: crdb.cockroachlabs.com/v1beta1
 kind: CrdbCluster
 metadata:
   name: crdb-no-topo
   namespace: default
 spec:
-  nodes: 3
-  image:
-    name: cockroachdb/cockroach:v23.1.11
-  dataStore:
-    pvc:
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: 60Gi
-        volumeMode: Filesystem
+  tlsEnabled: false
+  regions:
+    - code: local
+      nodes: 3
+  template:
+    spec:
+      image: cockroachdb/cockroach:v23.1.11
+      dataStore:
+        volumeClaimTemplate:
+          metadata: {}
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 60Gi
+            volumeMode: Filesystem
 ```
 
 Apply the resource and check the result:

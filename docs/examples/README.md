@@ -115,7 +115,7 @@ Complete operators that reconcile a custom resource, with manifests for both dep
 
 ### CockroachDB Dev Operator
 
-[`cockroachdb-dev/`](cockroachdb-dev/) reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1alpha1`) for local development. It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator) and produces the same external interface, so Helm charts work the same in development and production.
+[`cockroachdb-dev/`](cockroachdb-dev/) reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1beta1`) for local development. It is a lightweight alternative to the [CockroachDB operator](https://github.com/cockroachdb/helm-charts) and produces the same external interface, so Helm charts work the same in development and production.
 
 | File | Purpose |
 |------|---------|

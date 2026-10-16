@@ -90,43 +90,48 @@ This Secret will be replicated to all namespaces except `kube-system` and `monit
 
 ## CockroachDB Dev Operator (`docs/examples/cockroachdb-dev/`)
 
-The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local development. It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator) and produces the same external interface, so Helm charts work the same in development and production.
+The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local development. It is a lightweight alternative to the [CockroachDB operator](https://github.com/cockroachdb/helm-charts), deployed via Helm charts from the `cockroachdb/helm-charts` repository, and produces the same external interface, so Helm charts work the same in development and production.
 
 ### Watched Resource
-- `CrdbCluster` (`crdb.cockroachlabs.com/v1alpha1`)
+- `CrdbCluster` (`crdb.cockroachlabs.com/v1beta1`)
 
 ### Created Resources
-- StatefulSet `<metadata.name>` - one pod per `spec.nodes` replica, container `db`
+- StatefulSet `<metadata.name>` - one pod per node in `spec.regions`, container `db`
 - Discovery Service `<metadata.name>` - headless, for pod-to-pod DNS
 - Public Service `<metadata.name>-public` - `ClusterIP`, for clients
 
 ### Spec Fields
-- `spec.image.name` - CockroachDB container image (default `cockroachdb/cockroach:v23.1.11`)
-- `spec.nodes` - number of pods (default 3)
-- `spec.grpcPort`, `spec.httpPort`, `spec.sqlPort` - service and container ports
-- `spec.dataStore.pvc.spec` - `volumeClaimTemplates` for the `datadir` volume (default `emptyDir`)
-- `spec.additionalArgs`, `spec.resources`, `spec.additionalLabels`
+- `spec.template.spec.image` - CockroachDB container image (default `cockroachdb/cockroach:v23.1.11`)
+- `spec.regions[].nodes` - number of pods (default 3, sum of all regions)
+- `spec.template.spec.grpcPort`, `spec.template.spec.httpPort`, `spec.template.spec.sqlPort` - service and container ports
+- `spec.template.spec.dataStore.volumeClaimTemplate.spec` - `volumeClaimTemplates` for the `datadir` volume (default `emptyDir`)
+- `spec.template.spec.startFlags.upsert`, `spec.template.spec.resourceRequirements`, `spec.template.metadata.labels`
 
 ### Example Usage
 
 ```yaml
-apiVersion: crdb.cockroachlabs.com/v1alpha1
+apiVersion: crdb.cockroachlabs.com/v1beta1
 kind: CrdbCluster
 metadata:
   name: crdb-dev
   namespace: default
 spec:
-  nodes: 3
-  image:
-    name: cockroachdb/cockroach:v23.1.11
-  dataStore:
-    pvc:
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: 1Gi
-        volumeMode: Filesystem
+  tlsEnabled: false
+  regions:
+    - code: local
+      nodes: 3
+  template:
+    spec:
+      image: cockroachdb/cockroach:v23.1.11
+      dataStore:
+        volumeClaimTemplate:
+          metadata: {}
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 1Gi
+            volumeMode: Filesystem
 ```
 
 ### Finalizers

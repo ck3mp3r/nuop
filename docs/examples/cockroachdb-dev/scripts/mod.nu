@@ -1,7 +1,7 @@
 # Finalizer identifier
 const FINALIZER = "github.com/ck3mp3r-nuop-crdb-dev-finalizer"
 
-# Fallback image when spec.image.name is absent
+# Fallback image when spec.template.spec.image is absent
 const DEFAULT_IMAGE = "cockroachdb/cockroach:v23.1.11"
 
 # Default service ports
@@ -18,7 +18,7 @@ def 'main config' [] {
   {
     name: "cockroachdb-dev"
     group: "crdb.cockroachlabs.com"
-    version: "v1alpha1"
+    version: "v1beta1"
     kind: "CrdbCluster"
     labelSelectors: {}
     finalizer: $FINALIZER
@@ -26,31 +26,64 @@ def 'main config' [] {
   } | to yaml
 }
 
-# Reads the service ports from the spec, applying defaults
+# Returns the CrdbNode template spec (spec.template.spec), or an empty record
+def get-node-spec [spec: record] {
+  let template = ($spec | get --optional template | default {})
+  $template | get --optional spec | default {}
+}
+
+# Reads the service ports from the node spec, applying defaults
 def get-ports [spec: record] {
+  let node = (get-node-spec $spec)
   {
-    grpc: ($spec | get --optional grpcPort | default $DEFAULT_GRPC_PORT)
-    http: ($spec | get --optional httpPort | default $DEFAULT_HTTP_PORT)
-    sql: ($spec | get --optional sqlPort | default $DEFAULT_SQL_PORT)
+    grpc: ($node | get --optional grpcPort | default $DEFAULT_GRPC_PORT)
+    http: ($node | get --optional httpPort | default $DEFAULT_HTTP_PORT)
+    sql: ($node | get --optional sqlPort | default $DEFAULT_SQL_PORT)
   }
 }
 
-# Reads the container image from the spec, applying the default
+# Reads the container image from the node spec, applying the default
 def get-image [spec: record] {
-  let image = ($spec | get --optional image | default {})
-  $image | get --optional name | default $DEFAULT_IMAGE
+  let node = (get-node-spec $spec)
+  $node | get --optional image | default $DEFAULT_IMAGE
 }
 
-# Reads spec.dataStore.pvc.spec, returns null when absent
+# Reads spec.template.spec.dataStore.volumeClaimTemplate.spec, returns null when absent
 def get-pvc-spec [spec: record] {
-  let data_store = ($spec | get --optional dataStore | default {})
-  let pvc = ($data_store | get --optional pvc | default {})
-  $pvc | get --optional spec
+  let node = (get-node-spec $spec)
+  let data_store = ($node | get --optional dataStore | default {})
+  let claim = ($data_store | get --optional volumeClaimTemplate | default {})
+  $claim | get --optional spec
 }
 
-# Reads spec.additionalLabels, returns an empty record when absent
+# Reads spec.template.spec.startFlags.upsert, returns an empty list when absent
+def get-start-flags [spec: record] {
+  let node = (get-node-spec $spec)
+  let flags = ($node | get --optional startFlags | default {})
+  $flags | get --optional upsert | default []
+}
+
+# Reads spec.template.spec.resourceRequirements, returns null when absent
+def get-resources [spec: record] {
+  let node = (get-node-spec $spec)
+  $node | get --optional resourceRequirements
+}
+
+# Reads the total node count from spec.regions, defaulting to 3 when absent
+def get-nodes [spec: record] {
+  let regions = ($spec | get --optional regions | default [])
+  if ($regions | is-empty) {
+    3
+  } else {
+    $regions | get nodes | math sum
+  }
+}
+
+# Reads spec.template.metadata.labels, returns an empty record when absent
 def get-additional-labels [spec: record] {
-  $spec | get --optional additionalLabels | default {}
+  let template = ($spec | get --optional template | default {})
+  let metadata = ($template | get --optional metadata | default {})
+  $metadata | get --optional labels | default {}
 }
 
 # Builds the labels applied to every created resource
@@ -65,7 +98,7 @@ def build-labels [name: string, spec: record] {
 }
 
 # Builds the pod selector labels
-# Matches the full operator: name, instance, component plus additionalLabels
+# Matches the full operator: name, instance, component plus spec.template.metadata.labels
 def build-selector [labels: record, spec: record] {
   let base = ($labels | select "app.kubernetes.io/name" "app.kubernetes.io/instance" "app.kubernetes.io/component")
   $base | merge (get-additional-labels $spec)
@@ -159,8 +192,8 @@ def build-start-command [name: string, namespace: string, ports: record, additio
 
 # Builds the StatefulSet that runs the CockroachDB nodes
 def build-statefulset [name: string, namespace: string, spec: record, ports: record, image: string, nodes: int, labels: record, selector: record] {
-  let additional_args = ($spec | get --optional additionalArgs | default [])
-  let resources = ($spec | get --optional resources)
+  let additional_args = (get-start-flags $spec)
+  let resources = (get-resources $spec)
   let pvc_spec = (get-pvc-spec $spec)
 
   let join = (build-join-string $name $namespace $nodes $ports.grpc)
@@ -348,6 +381,32 @@ def patch-status [name: string, namespace: string, patch: record] {
   print $"🔄 Patched status: ($patch | to json -r)"
 }
 
+# Reads the ClusterReady condition status from the CrdbCluster status
+# Returns "True", "False", or "" when the condition is absent
+def get-cluster-ready [status: record] {
+  let conditions = ($status | get --optional conditions | default [])
+  let ready = ($conditions | where {|condition| ($condition | get --optional type) == "ClusterReady" })
+  if ($ready | is-empty) {
+    ""
+  } else {
+    $ready | first | get --optional status | default ""
+  }
+}
+
+# Patches the ClusterReady condition on the CrdbCluster status
+def patch-cluster-ready [name: string, namespace: string, ready: bool] {
+  let value = if $ready { "True" } else { "False" }
+  patch-status $name $namespace {
+    conditions: [
+      {
+        type: "ClusterReady"
+        status: $value
+        lastTransitionTime: (date now | format date "%Y-%m-%dT%H:%M:%SZ")
+      }
+    ]
+  }
+}
+
 # Returns true when the StatefulSet reports all requested replicas as ready
 def statefulset-ready [name: string, namespace: string, replicas: int] {
   let result = (kubectl get statefulset $name -n $namespace -o json | complete)
@@ -368,7 +427,7 @@ def handle-reconcile [parsed: record] {
 
   let ports = (get-ports $spec)
   let image = (get-image $spec)
-  let nodes = ($spec | get --optional nodes | default 3)
+  let nodes = (get-nodes $spec)
   let labels = (build-labels $name $spec)
   let selector = (build-selector $labels $spec)
 
@@ -376,13 +435,13 @@ def handle-reconcile [parsed: record] {
   let public_service = (build-public-service $name $namespace $ports $labels $selector)
   let statefulset = (build-statefulset $name $namespace $spec $ports $image $nodes $labels $selector)
 
-  let current_status = ($status | get --optional clusterStatus | default "")
+  let current_ready = (get-cluster-ready $status)
   let ready = (statefulset-ready $name $namespace $nodes)
 
   mut changed = false
 
-  if (not $ready) and $current_status != "Starting" {
-    patch-status $name $namespace {clusterStatus: "Starting"}
+  if (not $ready) and $current_ready != "False" {
+    patch-cluster-ready $name $namespace false
     $changed = true
   }
 
@@ -396,14 +455,14 @@ def handle-reconcile [parsed: record] {
     $changed = true
   }
 
-  let current_image = ($status | get --optional crdbcontainerimage | default "")
+  let current_image = ($status | get --optional image | default "")
   if $current_image != $image {
-    patch-status $name $namespace {crdbcontainerimage: $image}
+    patch-status $name $namespace {image: $image}
     $changed = true
   }
 
-  if $ready and $current_status != "Finished" {
-    patch-status $name $namespace {clusterStatus: "Finished"}
+  if $ready and $current_ready != "True" {
+    patch-cluster-ready $name $namespace true
     $changed = true
   }
 
