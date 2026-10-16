@@ -222,7 +222,7 @@ kubectl logs -l app.kubernetes.io/name=nuop -f
 echo '{"test": "data"}' | nu docs/examples/operators/my-operator/mod.nu reconcile
 
 # Check script syntax
-nu --check docs/examples/operators/my-operator/mod.nu
+nu --ide-check 100 docs/examples/operators/my-operator/mod.nu
 
 # Run with verbose logging
 RUST_LOG=debug op-run-standard
