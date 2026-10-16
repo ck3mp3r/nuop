@@ -20,7 +20,7 @@ spec:
       labelSelectors:
         app.kubernetes.io/replicate: "yes"
   sources:
-    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/operators
       path: scripts
 
 ---

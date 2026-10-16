@@ -1,13 +1,13 @@
 # Script Examples
 
-See the [operator/scripts](../../operator/scripts/) directory for complete working examples:
+See the [docs/examples/operators](../examples/operators/) directory for complete working examples:
 
 - **config-replicator**: Replicates ConfigMaps across namespaces
 - **secret-cloner**: Replicates Secrets with targeting controls
 
 These examples demonstrate real-world patterns and can serve as templates for your own operators.
 
-## Config Replicator (`operator/scripts/config-replicator/`)
+## Config Replicator (`docs/examples/operators/config-replicator/`)
 
 The Config Replicator automatically replicates ConfigMaps across namespaces based on labels and annotations.
 
@@ -47,7 +47,7 @@ data:
 
 This ConfigMap will be replicated to the `production` and `staging` namespaces only.
 
-## Secret Cloner (`operator/scripts/secret-cloner/`)
+## Secret Cloner (`docs/examples/operators/secret-cloner/`)
 
 The Secret Cloner automatically replicates Secrets across namespaces with the same targeting system as the Config Replicator.
 
@@ -111,4 +111,4 @@ Both operators are configured to requeue after 60 seconds when no changes are de
 
 - [Script Development Tutorial](README.md)
 - [Script API Reference](api-reference.md)
-- [operator/scripts/README.md](../../operator/scripts/README.md)
+- [docs/examples/operators/](../examples/operators/)

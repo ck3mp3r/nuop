@@ -11,9 +11,7 @@ COPY --from=nix-result bin/operator /bin/
 COPY ./docker/entrypoint /bin/
 COPY ./docker/init-sources /bin/
 COPY ./docker/install-crds /bin/
-COPY ./scripts /sources
-
-RUN chown -R nushell:nushell /sources
+RUN mkdir -p /sources && chown -R nushell:nushell /sources
 
 USER nushell
 WORKDIR /sources

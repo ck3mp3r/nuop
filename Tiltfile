@@ -17,7 +17,6 @@ docker_build(
         'Cargo.toml',
         'Cargo.lock',
         'docker',
-        'scripts',
     ],
 )
 

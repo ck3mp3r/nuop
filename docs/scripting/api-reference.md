@@ -139,7 +139,7 @@ Test individual functions:
 
 ```bash
 # Test configuration returns valid format
-config_result=$(echo '{}' | nu operator/scripts/my-operator/mod.nu config)
+config_result=$(echo '{}' | nu docs/examples/operators/my-operator/mod.nu config)
 echo $config_result | jq '.name'  # Should return script name
 ```
 
@@ -161,7 +161,7 @@ data:
 EOF
 
 # Get resource and test script
-kubectl get configmap test-configmap -o json | nu operator/scripts/my-operator/mod.nu reconcile
+kubectl get configmap test-configmap -o json | nu docs/examples/operators/my-operator/mod.nu reconcile
 ```
 
 ### Local Development
@@ -219,10 +219,10 @@ kubectl logs -l app.kubernetes.io/name=nuop -f
 
 ```bash
 # Test script directly
-echo '{"test": "data"}' | nu operator/scripts/my-operator/mod.nu reconcile
+echo '{"test": "data"}' | nu docs/examples/operators/my-operator/mod.nu reconcile
 
 # Check script syntax
-nu --check operator/scripts/my-operator/mod.nu
+nu --check docs/examples/operators/my-operator/mod.nu
 
 # Run with verbose logging
 RUST_LOG=debug op-run-standard

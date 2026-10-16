@@ -151,7 +151,7 @@ The managed examples use the Manager + Managed deployment mode where:
 
 ### Real Script Integration
 
-Examples use actual working scripts from `operator/scripts/`:
+Examples use actual working scripts from `docs/examples/operators/`:
 - `config-replicator` - Replicates ConfigMaps to target namespaces
 - `secret-cloner` - Clones Secrets to target namespaces
 
