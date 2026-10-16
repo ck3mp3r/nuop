@@ -142,7 +142,7 @@ Scripts watch for resources with specific labels:
 ### Standard Mode (Example 5)
 - **Best for**: Production deployments with fixed script sets
 - **How it works**: Scripts are bundled into container images at build time
-- **Script source**: Bundled in container at `/scripts`
+- **Script source**: Bundled in container at `/sources`
 
 ## Customization
 

@@ -70,16 +70,16 @@ Thank you for your interest in contributing to the Nushell Operator! This guide 
 #### Running Tests
 
 ```bash
-# Run all tests (including integration tests)
+# Run all tests
 op-tests
 
 # Run specific test modules
-cargo test --manifest-path operator/Cargo.toml config
-cargo test --manifest-path operator/Cargo.toml reconciler
-cargo test --manifest-path operator/Cargo.toml manager
+cargo nextest run --manifest-path operator/Cargo.toml config
+cargo nextest run --manifest-path operator/Cargo.toml reconciler
+cargo nextest run --manifest-path operator/Cargo.toml manager
 
 # Run tests with specific patterns
-cargo test --manifest-path operator/Cargo.toml test_reconcile
+cargo nextest run --manifest-path operator/Cargo.toml test_reconcile
 
 # Generate coverage report
 op-coverage
@@ -93,7 +93,7 @@ op-coverage
 
 #### Writing Tests
 
-- Place unit tests in the same file as the code being tested
+- Place unit tests in separate files under `operator/test/`
 - Use descriptive test names that explain the scenario
 - Include both positive and negative test cases
 - Mock external dependencies when possible
@@ -127,7 +127,7 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 3. **Deploy operator**:
    ```bash
-   kubectl apply -f docs/examples/basic-example.yaml
+   kubectl apply -f docs/examples/minimal.yaml
    ```
 
 4. **Check logs**:
@@ -199,8 +199,9 @@ operator/
 |---------|-------------|
 | `op-build` | Build and load the operator Docker image into kind |
 | `op-buildx` | Build and push multi-arch Docker images |
-| `op-tests` | Run all tests |
-| `op-coverage` | Generate code coverage |
+| `op-tests` | Run all tests (default profile) |
+| `op-tests-ci` | Run all tests with the CI profile (JUnit XML) |
+| `op-coverage` | Generate code coverage ([docs](coverage.md)) |
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
 | `op-crds` | Generate CRD manifests |

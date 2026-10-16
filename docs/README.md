@@ -29,6 +29,7 @@ Welcome to the Nushell Operator documentation! This guide will help you get star
 - **[Example Scripts](../operator/scripts/README.md)** - Working operator implementations
 - **[Configuration Examples](examples/README.md)** - Various deployment patterns
 - **[Testing Guide](TESTING.md)** - Script testing and validation
+- **[Code Coverage](coverage.md)** - Coverage tooling and CI integration
 
 ## 🛠️ Development Resources
 

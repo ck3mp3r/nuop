@@ -365,12 +365,10 @@ The `status` field is managed by the operator and reflects the current state of 
 ### Required Fields
 - `spec.sources`: At least one source must be defined
 - `spec.mappings`: At least one mapping must be defined
-- Each mapping must specify `script`, `kind`, and `apiVersion`
-- Each source must have `name` and `url`
+- Each mapping must specify `kind` and `version`. `name` is optional (defaults to empty string).
+- Each source must have `location` and `path`.
 
 ### Field Validation
-- Source names must be unique within a NuOperator
-- Script names in mappings must correspond to scripts available in sources
 - Selector maps use string keys and values only
 - Environment variable names must be valid C identifiers
 

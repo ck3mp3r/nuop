@@ -3,8 +3,8 @@
 ## Commands
 
 ```bash
-cargo build
-cargo test
+cargo build --manifest-path operator/Cargo.toml
+cargo nextest run --manifest-path operator/Cargo.toml
 cargo clippy --workspace --tests -- -D warnings   # warnings are errors
 cargo fmt -- --check
 ```
@@ -26,17 +26,13 @@ Never write production code without a failing test first.
 **No inline tests** - Tests must be in separate files in a top-level `test/` directory per crate:
 
 ```
-crates/<crate>/
-  src/
-    lib.rs
-    plugin.rs
-    commands/
-      info.rs
-  test/
-    lib.rs
-    plugin.rs
-    commands/
-      info.rs
+operator/
+  src/nuop/
+    manager/
+    reconciler/
+  test/nuop/
+    manager/
+    reconciler/
 ```
 
 - All test files live in `test/` at the crate root, mirroring the `src/` module hierarchy
@@ -70,21 +66,13 @@ crates/<crate>/
 
 ### Test Categorization
 
-Tests are split into **unit** and **integration** categories. Integration tests spin up real servers, bind TCP ports, do network I/O, or are inherently slow. Unit tests are pure logic with no network and no real servers.
+nuop has a single crate and no `integration` cargo feature. All tests are unit tests.
 
-**Unit test speed limit:** Every unit test MUST complete in under 1 second. If a test constructs a real HTTP client (`reqwest::Client`), performs TLS initialization (`rustls`/`ensure_crypto_provider`), opens a database, loads a system keychain, or resolves config from disk, it is an integration test — gate it behind `#[cfg(all(test, feature = "integration"))]` regardless of where the test file lives.
+**Unit test speed limit:** Every unit test MUST complete in under 1 second. A test that constructs a real Kubernetes client, binds TCP ports, or performs network I/O is an integration test — gate it behind a cargo feature before adding it.
 
-**Unit tests MUST NOT call integration-level constructors.** Functions like `build_acp_runtime()` that construct real provider clients, build HTTP clients, or probe keychains are integration-level. A unit test that calls such a function directly or transitively (e.g., through `new_session()` → `open_session()` → `build_acp_runtime()`) is an integration test in disguise. Inject a mock builder instead.
+**Mock the Kubernetes API.** Use `tower_test::mock::pair` to build a mock `kube::Client` and assert on the requests the operator issues. See `operator/test/nuop/reconciler/controller/support.rs`.
 
-Integration test modules are gated behind the `integration` cargo feature:
-
-```rust
-#[cfg(all(test, feature = "integration"))]
-#[path = "../../test/server/test.rs"]
-mod test;
-```
-
-The feature is defined in `crates/agnt-a2a/Cargo.toml`, `crates/agnt-core/Cargo.toml`, `crates/agnt-tui/Cargo.toml`, and `crates/agnt-plugin/Cargo.toml`. Enabling it on `agnt-plugin` or `agnt-tui` propagates to `agnt-core` and `agnt-a2a`.
+**Skip script-execution tests when `nu` is unavailable.** Tests that shell out to the Nushell interpreter call `should_skip_script_tests()` and return early when `nu` is not on `PATH`.
 
 `cargo nextest` is the test runner. Profiles live in `operator/.config/nextest.toml`:
 
@@ -104,14 +92,6 @@ cargo nextest run --profile ci --manifest-path operator/Cargo.toml   # CI run, J
 In the Nix dev shell these are wrapped as `op-tests` (default profile) and `op-tests-ci` (CI profile, JUnit output).
 
 The pre-push hook runs the full suite: `cargo clippy --manifest-path operator/Cargo.toml --tests -- -D warnings` lints all test code, then `cargo nextest run --profile ci --manifest-path operator/Cargo.toml` runs everything and writes `junit.xml`.
-
-Integration test modules:
-
-- `agnt-a2a` — `test/server/`, `test/agent/`, `test/client/a2a_client.rs`, `test/client/functions.rs`, `test/discovery/test.rs`, `test/tools/test.rs`, `test/task_store/test.rs`
-- `agnt-core` — `test/conversation/turn/test.rs`, `test/conversation/turn/executor/`, `test/session/sqlite_store.rs`, `test/tools/mcp/oauth_callback.rs`
-- `agnt-plugin` — `test/command/session/clear.rs`, `test/command/session/inspect.rs`, `test/command/session/list.rs`
-
-All other test modules are unit tests. `agnt-tui` and `agnt-tty` have no integration test modules.
 
 ### No test-only code in production
 
@@ -176,7 +156,7 @@ in the scope, flag it for the orchestrator — do not do it inline.
 
 **Every external dependency MUST be injected via a trait so unit tests can substitute a mock.** This is not a suggestion — it is a hard requirement derived from the SOLID Dependency Inversion Principle.
 
-- ❌ NO: A constructor or method that hardcodes a concrete function performing I/O (e.g., `open_session()` calling `build_acp_runtime()` directly)
+- ❌ NO: A constructor or method that hardcodes a concrete function performing I/O (e.g., a constructor that opens a file or builds an HTTP client directly)
 - ✅ YES: Define a trait (`RuntimeBuilder`, `SessionUpdateSink`, `PermissionRequestSink`) and store it on the struct. Production uses the real impl; tests use a mock impl.
 - ❌ NO: A unit test that constructs a real `reqwest::Client`, performs TLS init, opens a database, or probes a keychain
 - ✅ YES: Inject a mock that returns a pre-built value. The mock lives in the test file, not in production code.
@@ -302,7 +282,7 @@ Parallel agents will corrupt each other's builds and produce interleaved file ed
 
 ```bash
 cargo clippy --workspace --tests -- -D warnings
-cargo test --workspace
+cargo nextest run --manifest-path operator/Cargo.toml
 ```
 
 A reviewer subagent must sign off before committing. Clippy warnings are
@@ -454,13 +434,13 @@ See `docs/configuration.md` for the full field reference and provider examples.
 
 ### Loading from config.toml
 
-`PluginConfig` is loaded via `toml_config::load()` (`crates/agnt-core/src/config/toml_config.rs`) from `config.toml`. All new features go through this single path.
+`PluginConfig` is loaded via `toml_config::load()` from `config.toml`. All new features go through this single path.
 
 The `PluginConfig` struct holds top-level blocks: `models`, `providers`, `compaction`, `mcp`, `permissions`, `agents`, `preamble`, `a2a_enabled`, `session_store`.
 
 ### Precedence chain (highest → lowest)
 
-1. CLI flags — applied in `resolve_with_new_config()` (`crates/agnt-plugin/src/command/agent/runtime_build.rs`)
+1. CLI flags — applied in `resolve_with_new_config()`
 2. Persona front matter — `model:` field selects a role or literal model
 3. Role-level config — `ModelRoleConfig` record for the selected role (e.g. `models.heavy`), applied in `PluginConfig::resolve_model()`
 4. Model-level config — `providers.<name>.models.<name>` fields, applied in `PluginConfig::resolve_model()`
@@ -479,7 +459,7 @@ Every `Option` field on the runtime `Config` struct must have at least one real 
 1. Add field to `ModelRoleConfig` struct + parse in `toml_config::load()` models sub-record parsing
 2. Apply in `resolve_model()` role-level block (`if config.field.is_none()`)
 3. Add env var `AGENT_<FIELD_UPPER>` to `Config::from_env()`
-4. Add CLI flag in `crates/agnt-plugin/src/command/agent/mod.rs` + apply in `apply_cli_flags()`
+4. Add CLI flag in the CLI command module + apply in `apply_cli_flags()`
 5. Add tests in the corresponding `test/` directory file — NO inline tests
 6. Update `docs/configuration.md`
 ```

@@ -145,12 +145,13 @@ The `config` function must return a record with these fields:
 |-------|------|----------|-------------|
 | `name` | string | Yes | Unique name for this operator script |
 | `kind` | string | Yes | Kubernetes resource kind to watch |
-| `apiVersion` | string | Yes | API version of the resource |
+| `version` | string | Yes | API version of the resource |
 | `group` | string | No | API group (for custom resources) |
-| `labelSelector` | record | No | Label selector to filter resources |
-| `fieldSelector` | record | No | Field selector to filter resources |
+| `labelSelectors` | record | No | Label selector to filter resources |
+| `fieldSelectors` | record | No | Field selector to filter resources |
 | `finalizer` | string | No | Finalizer name for cleanup handling |
-| `requeueAfterSeconds` | int | No | Requeue interval (default: 60) |
+| `requeue_after_change` | int | No | Requeue interval after changes (default: 10) |
+| `requeue_after_noop` | int | No | Requeue interval when no changes (default: 300) |
 
 ### Environment Variables
 
@@ -358,7 +359,7 @@ def "main config" [] {
     {
         name: "my-crd-operator",
         kind: "MyCustomResource",
-        apiVersion: "v1",
+        version: "v1",
         group: "example.com"  # Specify group for CRDs
     }
 }

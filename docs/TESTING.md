@@ -117,7 +117,7 @@ kubectl apply -f test-data/configmap.yaml
 op-run-manager
 
 # Apply NuOperator resource
-kubectl apply -f docs/examples/basic-example.yaml
+kubectl apply -f docs/examples/minimal.yaml
 ```
 
 **Managed Mode Testing**:

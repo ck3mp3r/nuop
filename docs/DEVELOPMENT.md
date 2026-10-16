@@ -45,8 +45,9 @@ The project uses Nix flakes for reproducible development environments with two c
 |---------|-------------|
 | `op-build` | Build and load the operator Docker image into kind |
 | `op-buildx` | Build and push multi-arch Docker images |
-| `op-tests` | Run all tests including integration tests |
-| `op-coverage` | Generate code coverage report |
+| `op-tests` | Run all tests (default profile) |
+| `op-tests-ci` | Run all tests with the CI profile (JUnit XML) |
+| `op-coverage` | Generate code coverage report ([docs](coverage.md)) |
 | `op-clippy` | Run Rust linter |
 | `op-fmt` | Format Rust code |
 | `op-crds` | Generate CRD manifests |
@@ -83,8 +84,8 @@ op-build
 op-tests
 
 # Run specific test modules
-cargo test --manifest-path operator/Cargo.toml config
-cargo test --manifest-path operator/Cargo.toml --lib standard
+cargo nextest run --manifest-path operator/Cargo.toml config
+cargo nextest run --manifest-path operator/Cargo.toml standard
 
 # Generate coverage report
 op-coverage
@@ -116,15 +117,15 @@ nix flake show
 ## Project Structure
 
 ```
-operator/
-├── src/nuop/           # Main operator code
-│   ├── manager/        # Manager mode implementation
-│   ├── reconciler/     # Core reconciliation logic
-│   ├── config.rs       # Configuration handling
-│   └── ...
-├── scripts/            # Example operator scripts
-├── docker/             # Container build files
-└── nix/               # Nix build configuration
+.
+├── operator/           # Rust operator crate
+│   ├── src/nuop/       # Main operator code
+│   │   ├── manager/    # Manager mode implementation
+│   │   ├── reconciler/ # Core reconciliation logic
+│   │   └── config.rs   # Configuration handling
+│   ├── scripts/        # Example operator scripts
+│   └── docker/         # Container build files
+└── nix/                # Nix build configuration
 ```
 
 ## Troubleshooting

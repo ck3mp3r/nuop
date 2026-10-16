@@ -24,7 +24,7 @@ spec:
   sources:
     # Local volume mount (for development)
     - location: /opt/dev-scripts
-      path: /scripts
+      path: local-dev
 
 ---
 # ServiceAccount for local development
