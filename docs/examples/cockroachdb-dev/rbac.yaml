@@ -24,10 +24,10 @@ rules:
   # CrdbCluster watch and status updates
   - apiGroups: ["crdb.cockroachlabs.com"]
     resources: ["crdbclusters"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["crdb.cockroachlabs.com"]
     resources: ["crdbclusters/status"]
-    verbs: ["update", "patch"]
+    verbs: ["get", "update", "patch"]
 
   # Owned resources
   - apiGroups: ["apps"]
