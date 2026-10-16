@@ -7,10 +7,10 @@ The Nushell Operator (nuop) enables you to build Kubernetes controllers using [N
 ## 📚 Documentation
 
 - **[Complete Documentation](docs/README.md)** - Full documentation index
-- **[Quick Start & Development](docs/DEVELOPMENT.md)** - Get started in minutes
-- **[Script Development Guide](docs/SCRIPT-DEVELOPMENT.md)** - Write your own operators
+- **[Development Guide](docs/development/README.md)** - Get started in minutes
+- **[Script Development Guide](docs/scripting/README.md)** - Write your own operators
 - **[Examples](docs/examples/README.md)** - Sample configurations and patterns
-- **[Development Guide](docs/DEVELOPMENT.md)** - Setup, workflow, and troubleshooting
+- **[Testing](docs/development/testing.md)** - Test organization and how to run the suite
 
 ## 🚀 Quick Start
 
@@ -38,4 +38,4 @@ See the [complete documentation](docs/README.md) for detailed deployment approac
 
 ## Contributing
 
-See our [Contributing Guide](docs/CONTRIBUTING.md) for development setup and submission process.
+See our [Contributing Guide](docs/development/contributing.md) for development setup and submission process.

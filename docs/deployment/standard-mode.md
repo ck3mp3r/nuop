@@ -283,4 +283,4 @@ rules:
 - [Deployment Overview](README.md)
 - [Manager + Managed Mode](managed-mode.md)
 - [Automatic CRD Installation](crd-auto-installation.md)
-- [Script Development Guide](../SCRIPT-DEVELOPMENT.md)
+- [Script Development Guide](../scripting/README.md)

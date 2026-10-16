@@ -1,84 +1,48 @@
 # Documentation Index
 
-Welcome to the Nushell Operator documentation! This guide will help you get started with developing, deploying, and using nuop.
+Documentation for the Nushell Operator (nuop). Start with the section that matches your role.
 
-## 🚀 Getting Started
+## For Users
 
-### For Users
-- **[Examples](examples/README.md)** - Sample configurations and use cases
-- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment best practices
-- **[Development Setup](DEVELOPMENT.md)** - Environment setup, workflow, and troubleshooting
+Deploy and operate nuop, and write operator scripts.
 
-### For Developers
-- **[Development Setup](DEVELOPMENT.md)** - Environment setup and workflow
-- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines and standards
-- **[Script Development](SCRIPT-DEVELOPMENT.md)** - Complete guide to writing operator scripts
+### Concepts
 
-## 📚 Reference Documentation
+- **[Architecture](architecture.md)** — system design, components, and how the operator reconciles resources
 
-### Core Concepts
-- **[Architecture Overview](ARCHITECTURE.md)** - System design and components
-- **[Operator Modes](../README.md#how-it-works)** - Standard, Manager, and Managed modes
+### Deployment
 
-### API Reference
-- **[NuOperator CRD](api/CRD.md)** - Custom resource definition reference
-- **[Script API](SCRIPT-DEVELOPMENT.md#script-api-reference)** - Required functions and interfaces
-- **[Configuration Options](api/CONFIG.md)** - Environment and deployment configuration *(coming soon)*
+- **[Deployment Overview](deployment/README.md)** — choose between Standard mode and Manager + Managed mode
+- **[Standard Mode](deployment/standard-mode.md)** — scripts bundled into a container image (recommended)
+- **[Manager + Managed Mode](deployment/managed-mode.md)** — dynamic provisioning from `NuOperator` custom resources
+- **[Automatic CRD Installation](deployment/crd-auto-installation.md)** — install CRDs from `/sources/**/crds/` before controllers start
 
-### Examples and Patterns
-- **[Example Scripts](../operator/scripts/README.md)** - Working operator implementations
-- **[Configuration Examples](examples/README.md)** - Various deployment patterns
-- **[Testing Guide](TESTING.md)** - Script testing and validation
-- **[Code Coverage](coverage.md)** - Coverage tooling and CI integration
+### Scripting
 
-## 🛠️ Development Resources
+- **[Script Development Tutorial](scripting/README.md)** — write your first operator script
+- **[Script API Reference](scripting/api-reference.md)** — config/reconcile/finalize protocol, exit codes, environment variables
+- **[Script Examples](scripting/examples.md)** — working scripts you can copy
 
-### Quick References
-- **[Available Commands](DEVELOPMENT.md#available-tools--scripts)** - Development environment tools
-- **[Common Patterns](SCRIPT-DEVELOPMENT.md#common-patterns)** - Script development patterns
-- **[Troubleshooting](DEVELOPMENT.md#troubleshooting)** - Common errors and debugging
+### Examples
 
-### Advanced Topics
-- **[Performance Optimization](DEPLOYMENT.md#performance-tuning)** - Optimizing operator and script performance
-- **[Security Best Practices](SCRIPT-DEVELOPMENT.md#security)** - Secure script development
-- **[Multi-Resource Operators](SCRIPT-DEVELOPMENT.md#advanced-topics)** - Complex operator patterns
+- **[Example Configurations](examples/README.md)** — complete manifests for Standard and Managed modes
 
-## 📖 How to Use This Documentation
+## For Developers
 
-### First Time Users
-1. Start with the main [README](../README.md) for project overview
-2. Follow [Development Setup](DEVELOPMENT.md) to get your environment ready
-3. Try the [Examples](examples/README.md) to see nuop in action
+Contribute to the nuop codebase.
 
-### Script Developers
-1. Read [Script Development Guide](SCRIPT-DEVELOPMENT.md) for complete tutorial
-2. Study [Example Scripts](../operator/scripts/README.md) for real patterns
-3. Check [Development Guide](DEVELOPMENT.md#troubleshooting) when you hit issues
+- **[Development Guide](development/README.md)** — environment setup, tools, and workflow
+- **[Testing](development/testing.md)** — test organization and how to run the suite
+- **[Code Coverage](development/coverage.md)** — coverage tooling and CI integration
+- **[Contributing](development/contributing.md)** — PR process, code style, and commit conventions
 
-### Contributors
-1. Follow [Development Setup](DEVELOPMENT.md) for environment configuration
-2. Read [Contributing Guidelines](CONTRIBUTING.md) for workflow and standards
-3. Reference [Script Development](SCRIPT-DEVELOPMENT.md) for implementation patterns
+## Reference
 
-## 🔗 External Resources
+- **[NuOperator CRD](api/nuoperator-crd.md)** — custom resource definition reference
+- **[Script API Reference](scripting/api-reference.md)** — script protocol and configuration fields
 
-- **[Nushell Documentation](https://www.nushell.sh/book/)** - Learn Nushell scripting
-- **[Kubernetes Operator Guide](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)** - Understanding operators
-- **[Custom Resource Definitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)** - CRD concepts
+## External Resources
 
-## 📝 Documentation Status
-
-| Document | Status | Last Updated |
-|----------|--------|--------------|
-| [Development Setup](DEVELOPMENT.md) | ✅ Complete | Latest |
-| [Script Development](SCRIPT-DEVELOPMENT.md) | ✅ Complete | Latest |
-
-| [Contributing](CONTRIBUTING.md) | ✅ Complete | Latest |
-| [Architecture](ARCHITECTURE.md) | ✅ Complete | Latest |
-| [Deployment Guide](DEPLOYMENT.md) | ✅ Complete | Latest |
-| [API Reference](api/CRD.md) | ✅ Complete | Latest |
-| [Testing Guide](TESTING.md) | ✅ Complete | Latest |
-
----
-
-**Need help?** Check the [Development Guide](DEVELOPMENT.md#troubleshooting) or create an issue on GitHub.
+- **[Nushell Documentation](https://www.nushell.sh/book/)** — learn Nushell scripting
+- **[Kubernetes Operator Guide](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)** — understanding operators
+- **[Custom Resource Definitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)** — CRD concepts

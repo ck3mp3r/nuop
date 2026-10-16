@@ -316,6 +316,6 @@ You can use this test as a template for your own operators:
 
 ## Related Documentation
 
-- [CRD Auto-Installation Guide](../docs/CRD-AUTO-INSTALLATION.md)
-- [Script Development Guide](../docs/SCRIPT-DEVELOPMENT.md)
-- [Deployment Guide](../docs/DEPLOYMENT.md)
+- [CRD Auto-Installation Guide](../docs/deployment/crd-auto-installation.md)
+- [Script Development Guide](../docs/scripting/README.md)
+- [Deployment Guide](../docs/deployment/README.md)

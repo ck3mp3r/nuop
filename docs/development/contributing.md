@@ -100,7 +100,7 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 3. **Deploy operator**:
    ```bash
-   kubectl apply -f docs/examples/minimal.yaml
+   kubectl apply -f docs/examples/managed/minimal.yaml
    ```
 
 4. **Check logs**:
@@ -159,4 +159,4 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the same license as the project (see [LICENSE.md](LICENSE.md)).
+By contributing to this project, you agree that your contributions will be licensed under the same license as the project (see [LICENSE.md](../../LICENSE.md)).

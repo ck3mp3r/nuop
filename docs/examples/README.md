@@ -191,7 +191,7 @@ To adapt these examples:
 
 ## External Resources
 
-- [NuOperator CRD Reference](../api/CRD.md)
+- [NuOperator CRD Reference](../api/nuoperator-crd.md)
 - [Script Development Guide](../scripting/README.md)
 - [Deployment Guide](../deployment/README.md)
 - [Testing Guide](../development/testing.md)

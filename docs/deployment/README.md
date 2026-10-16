@@ -41,5 +41,5 @@ See [managed-mode.md](managed-mode.md).
 ## Shared Features
 
 - [Automatic CRD Installation](crd-auto-installation.md) — install CRDs from `/sources/**/crds/` before controllers start
-- [Script Development Guide](../SCRIPT-DEVELOPMENT.md) — writing operator scripts
+- [Script Development Guide](../scripting/README.md) — writing operator scripts
 - [Examples](../examples/README.md) — complete working examples

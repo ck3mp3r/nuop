@@ -194,7 +194,7 @@ cargo llvm-cov --workspace --html --output-dir coverage/
 - Coverage is a second quality dimension next to clippy: clippy finds suspicious code, coverage finds code no test executes.
 - Test files live in `test/` (singular), which the default exclusion patterns do not cover — pass `--ignore-filename-regex '(/test/|/test$)'` to keep them out of the report.
 - `--fail-under-lines <N>` exits non-zero when total line coverage drops below `N` percent. No threshold is enforced yet.
-- Full workflow, output formats, per-crate runs, and CI integration: `docs/coverage.md`.
+- Full workflow, output formats, per-crate runs, and CI integration: `docs/development/coverage.md`.
 
 ## Code Quality
 
