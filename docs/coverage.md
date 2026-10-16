@@ -95,10 +95,16 @@ debug = "line-tables-only"
 opt-level = 0
 ```
 
-Select it with `--cargo-profile`:
+Select it with `--profile`:
 
 ```sh
-cargo llvm-cov --manifest-path operator/Cargo.toml --cargo-profile coverage
+cargo llvm-cov --manifest-path operator/Cargo.toml --profile coverage
+```
+
+With the `nextest` subcommand, pass the profile with `--cargo-profile` instead:
+
+```sh
+cargo llvm-cov nextest --manifest-path operator/Cargo.toml --cargo-profile coverage
 ```
 
 The profile inherits from `test`, keeps debug info at `line-tables-only` to reduce artifact size, and disables optimization so coverage counters map cleanly to source lines.

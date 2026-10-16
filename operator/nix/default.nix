@@ -27,7 +27,7 @@
 
   toolchain = inputs.rustnix.lib.rust.mkToolchain {
     inherit system;
-    extras = ["rustfmt" "clippy" "rust-analyzer"];
+    extras = ["rustfmt" "clippy" "rust-analyzer" "llvm-tools-preview"];
   };
 in {
   inherit packages toolchain;
