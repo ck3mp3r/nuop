@@ -45,6 +45,11 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list"]
 
+  # Cluster initialization (cockroach init via kubectl exec)
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

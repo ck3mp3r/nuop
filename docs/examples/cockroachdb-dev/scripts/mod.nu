@@ -480,6 +480,36 @@ def statefulset-ready [name: string, namespace: string] {
   $statefulset.status | get --optional readyReplicas | default 0
 }
 
+# Initializes the CockroachDB cluster by running `cockroach init` against pod-0
+# Idempotent: "Cluster successfully initialized" and "cluster has already been
+# initialized" are both success. Returns without error when pod-0 is not Running
+# or the output is inconclusive, so the next reconcile retries.
+def cluster-init [name: string, namespace: string, grpc_port: int, cluster_ready: string] {
+  if $cluster_ready == "True" {
+    return
+  }
+
+  let pod = $"($name)-0"
+  let phase = (kubectl get pod $pod -n $namespace -o jsonpath='{.status.phase}' | complete)
+  if $phase.exit_code != 0 or ($phase.stdout | str trim) != "Running" {
+    return
+  }
+
+  let host = $"($pod).($name).($namespace):($grpc_port)"
+  let result = (
+    kubectl exec $pod -n $namespace -- /cockroach/cockroach init --insecure $"--host=($host)"
+    | complete
+  )
+
+  let output = $"($result.stdout)($result.stderr)"
+  if ($output | str contains "Cluster successfully initialized") or ($output | str contains "cluster has already been initialized") {
+    print $"✅ Cluster initialized via ($pod)"
+    return
+  }
+
+  print $"⏳ Cluster not ready to initialize, retrying on next reconcile: ($output | str trim)"
+}
+
 # Reconciliation logic for create/update events
 def handle-reconcile [parsed: record] {
   let name = $parsed.metadata.name
@@ -519,6 +549,7 @@ def handle-reconcile [parsed: record] {
   if (apply-resource $statefulset $namespace) {
     $changed = true
   }
+  cluster-init $name $namespace $ports.grpc $current_ready
   if (apply-resource $client_secret $namespace) {
     $changed = true
   }
