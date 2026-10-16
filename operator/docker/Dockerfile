@@ -1,4 +1,4 @@
-FROM ghcr.io/nushell/nushell:0.108.0-alpine AS final
+FROM ghcr.io/nushell/nushell:0.116.1-alpine AS final
 
 USER root
 RUN apk add \
