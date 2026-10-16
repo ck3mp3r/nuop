@@ -330,6 +330,13 @@ def contains-subset [desired: any, actual: any] {
     return true
   }
 
+  # Kubernetes normalizes some scalars to strings (for example Quantity fields
+  # such as resourceFieldRef.divisor). Compare scalars by their string form when
+  # the types differ so server-side normalization does not register as drift.
+  if $desired_type != $actual_type {
+    return (($desired | into string) == ($actual | into string))
+  }
+
   $desired == $actual
 }
 
@@ -354,7 +361,7 @@ def apply-resource [manifest: record, namespace: string] {
     return false
   }
 
-  let result = (($manifest | to yaml) | kubectl apply -f - | complete)
+  let result = (($manifest | to yaml) | kubectl apply --server-side -f - | complete)
   if $result.exit_code != 0 {
     print $"❌ Failed to apply ($kind)/($name): ($result.stderr)"
     exit 1
@@ -364,12 +371,30 @@ def apply-resource [manifest: record, namespace: string] {
   true
 }
 
+# Reads metadata.generation from the watch event, falling back to a live get
+def get-generation [parsed: record] {
+  let generation = ($parsed.metadata | get --optional generation)
+  if $generation != null {
+    return $generation
+  }
+
+  let name = $parsed.metadata.name
+  let namespace = $parsed.metadata.namespace
+  let result = (kubectl get crdbcluster $name -n $namespace -o jsonpath='{.metadata.generation}' | complete)
+  if $result.exit_code != 0 {
+    print $"❌ Failed to read generation: ($result.stderr)"
+    exit 1
+  }
+
+  $result.stdout | str trim | into int
+}
+
 # Patches the CrdbCluster status subresource
-def patch-status [name: string, namespace: string, patch: record] {
+def patch-status [name: string, namespace: string, generation: int, patch: record] {
+  let payload = ($patch | merge {observedGeneration: $generation})
+  let json = ({status: $payload} | to json -r)
   let result = (
-    {status: $patch}
-    | to json
-    | kubectl patch crdbcluster $name -n $namespace --type=merge --subresource=status --patch-file=/dev/stdin
+    kubectl patch crdbcluster $name -n $namespace --type=merge --subresource=status --patch $json
     | complete
   )
 
@@ -378,7 +403,7 @@ def patch-status [name: string, namespace: string, patch: record] {
     exit 1
   }
 
-  print $"🔄 Patched status: ($patch | to json -r)"
+  print $"🔄 Patched status: ($payload | to json -r)"
 }
 
 # Reads the ClusterReady condition status from the CrdbCluster status
@@ -394,9 +419,9 @@ def get-cluster-ready [status: record] {
 }
 
 # Patches the ClusterReady condition on the CrdbCluster status
-def patch-cluster-ready [name: string, namespace: string, ready: bool] {
+def patch-cluster-ready [name: string, namespace: string, generation: int, ready: bool] {
   let value = if $ready { "True" } else { "False" }
-  patch-status $name $namespace {
+  patch-status $name $namespace $generation {
     conditions: [
       {
         type: "ClusterReady"
@@ -424,6 +449,7 @@ def handle-reconcile [parsed: record] {
   let namespace = $parsed.metadata.namespace
   let spec = ($parsed | get --optional spec | default {})
   let status = ($parsed | get --optional status | default {})
+  let generation = (get-generation $parsed)
 
   let ports = (get-ports $spec)
   let image = (get-image $spec)
@@ -441,7 +467,7 @@ def handle-reconcile [parsed: record] {
   mut changed = false
 
   if (not $ready) and $current_ready != "False" {
-    patch-cluster-ready $name $namespace false
+    patch-cluster-ready $name $namespace $generation false
     $changed = true
   }
 
@@ -457,12 +483,12 @@ def handle-reconcile [parsed: record] {
 
   let current_image = ($status | get --optional image | default "")
   if $current_image != $image {
-    patch-status $name $namespace {image: $image}
+    patch-status $name $namespace $generation {image: $image}
     $changed = true
   }
 
   if $ready and $current_ready != "True" {
-    patch-cluster-ready $name $namespace true
+    patch-cluster-ready $name $namespace $generation true
     $changed = true
   }
 
