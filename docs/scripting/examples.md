@@ -4,6 +4,7 @@ See the [docs/examples/operators](../examples/operators/) directory for complete
 
 - **config-replicator**: Replicates ConfigMaps across namespaces
 - **secret-cloner**: Replicates Secrets with targeting controls
+- **cockroachdb-dev**: Reconciles `CrdbCluster` resources for local development
 
 These examples demonstrate real-world patterns and can serve as templates for your own operators.
 
@@ -86,6 +87,57 @@ data:
 ```
 
 This Secret will be replicated to all namespaces except `kube-system` and `monitoring`.
+
+## CockroachDB Dev Operator (`docs/examples/operators/cockroachdb-dev/`)
+
+The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local development. It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator) and produces the same external interface, so Helm charts work the same in development and production.
+
+### Watched Resource
+- `CrdbCluster` (`crdb.cockroachlabs.com/v1alpha1`)
+
+### Created Resources
+- StatefulSet `<metadata.name>` - one pod per `spec.nodes` replica, container `db`
+- Discovery Service `<metadata.name>` - headless, for pod-to-pod DNS
+- Public Service `<metadata.name>-public` - `ClusterIP`, for clients
+
+### Spec Fields
+- `spec.image.name` - CockroachDB container image (default `cockroachdb/cockroach:v23.1.11`)
+- `spec.nodes` - number of pods (default 3)
+- `spec.grpcPort`, `spec.httpPort`, `spec.sqlPort` - service and container ports
+- `spec.dataStore.pvc.spec` - `volumeClaimTemplates` for the `datadir` volume (default `emptyDir`)
+- `spec.additionalArgs`, `spec.resources`, `spec.additionalLabels`
+
+### Example Usage
+
+```yaml
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: crdb-dev
+  namespace: default
+spec:
+  nodes: 3
+  image:
+    name: cockroachdb/cockroach:v23.1.11
+  dataStore:
+    pvc:
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi
+        volumeMode: Filesystem
+```
+
+### Finalizers
+- `github.com/ck3mp3r-nuop-crdb-dev-finalizer`
+
+Finalization deletes the StatefulSet and both Services. It does not delete PVCs, so data survives a cluster deletion.
+
+### Limitations
+- Insecure mode only. TLS and certificates are not supported.
+- Fixed `--cache` and `--max-sql-memory` of 256MiB.
+- No topology, ingress, node selectors, tolerations, or affinity.
 
 ## Common Features
 

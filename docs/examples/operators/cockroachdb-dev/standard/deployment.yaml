@@ -1,0 +1,47 @@
+---
+# CockroachDB Dev Operator — Standard Mode Deployment
+#
+# Runs the custom image built from docker/Dockerfile. The image bundles the
+# operator script and the CrdbCluster CRD, which install-crds applies on startup.
+#
+# Build the image first:
+#   docker build -t cockroachdb-dev -f docs/examples/operators/cockroachdb-dev/docker/Dockerfile docs/examples/operators/cockroachdb-dev/
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroachdb-dev
+  namespace: default
+  labels:
+    app.kubernetes.io/name: nuop
+    app.kubernetes.io/component: operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cockroachdb-dev
+  template:
+    metadata:
+      labels:
+        app: cockroachdb-dev
+        app.kubernetes.io/name: nuop
+    spec:
+      serviceAccountName: cockroachdb-dev-sa
+      containers:
+        - name: operator
+          image: cockroachdb-dev:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NUOP_MODE
+              value: standard
+            - name: NUOP_SOURCES_PATH
+              value: /sources
+            - name: RUST_LOG
+              value: info
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"

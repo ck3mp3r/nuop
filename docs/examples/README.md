@@ -107,6 +107,41 @@ Shows how to develop and test scripts locally using volume mounts.
 kubectl apply -f managed/local-development.yaml
 ```
 
+## Operator Examples
+
+Complete operators that reconcile a custom resource, with manifests for both deployment modes.
+
+### CockroachDB Dev Operator
+
+[`operators/cockroachdb-dev/`](operators/cockroachdb-dev/) reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1alpha1`) for local development. It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator) and produces the same external interface, so Helm charts work the same in development and production.
+
+| File | Purpose |
+|------|---------|
+| [`operators/cockroachdb-dev/rbac.yaml`](operators/cockroachdb-dev/rbac.yaml) | ServiceAccount, ClusterRole, and ClusterRoleBinding |
+| [`operators/cockroachdb-dev/docker/Dockerfile`](operators/cockroachdb-dev/docker/Dockerfile) | Standard mode image with the script and CRD bundled |
+| [`operators/cockroachdb-dev/standard/deployment.yaml`](operators/cockroachdb-dev/standard/deployment.yaml) | Standard mode Deployment |
+| [`operators/cockroachdb-dev/managed/nuoperator.yaml`](operators/cockroachdb-dev/managed/nuoperator.yaml) | Managed mode `NuOperator` CR |
+| [`operators/cockroachdb-dev/crdb-cluster.yaml`](operators/cockroachdb-dev/crdb-cluster.yaml) | Example `CrdbCluster` for local development |
+
+**Standard mode**:
+
+```bash
+docker build -t cockroachdb-dev -f docs/examples/operators/cockroachdb-dev/docker/Dockerfile docs/examples/operators/cockroachdb-dev/
+kubectl apply -f operators/cockroachdb-dev/rbac.yaml
+kubectl apply -f operators/cockroachdb-dev/standard/deployment.yaml
+kubectl apply -f operators/cockroachdb-dev/crdb-cluster.yaml
+```
+
+**Managed mode**:
+
+```bash
+kubectl apply -f operators/cockroachdb-dev/rbac.yaml
+kubectl apply -f operators/cockroachdb-dev/managed/nuoperator.yaml
+kubectl apply -f operators/cockroachdb-dev/crdb-cluster.yaml
+```
+
+See [`operators/cockroachdb-dev/README.md`](operators/cockroachdb-dev/README.md) for the full operator reference.
+
 ## Testing the Examples
 
 ### Prerequisites

@@ -1,0 +1,35 @@
+---
+# CockroachDB Dev Operator — Managed Mode
+#
+# The manager fetches the operator script from the nuop repository and the
+# CrdbCluster CRD from the cockroach-operator repository. Both sources share
+# path: cockroachdb-dev, so the script lands in /sources/cockroachdb-dev/scripts/
+# and the CRD in /sources/cockroachdb-dev/crds/. install-crds installs the CRD
+# before the operator starts.
+#
+# Apply the RBAC from ../rbac.yaml first.
+
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: cockroachdb-dev
+  namespace: default
+spec:
+  serviceAccountName: cockroachdb-dev-sa
+  env:
+    - name: RUST_LOG
+      value: info
+  sources:
+    # Operator script from the nuop repository
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/operators/cockroachdb-dev
+      path: cockroachdb-dev
+      source_type: scripts
+    # CrdbCluster CRD from the cockroach-operator repository
+    - location: https://github.com/cockroachdb/cockroach-operator.git?ref=master&dir=config/crd/bases
+      path: cockroachdb-dev
+      source_type: crds
+  mappings:
+    - name: cockroachdb-dev
+      group: crdb.cockroachlabs.com
+      version: v1alpha1
+      kind: CrdbCluster
