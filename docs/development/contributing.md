@@ -1,15 +1,10 @@
 # Contributing to Nushell Operator
 
-Thank you for your interest in contributing to the Nushell Operator! This guide will help you get started with development and understand our contribution process.
+Thank you for your interest in contributing to the Nushell Operator! This guide covers the contribution process: branching, code style, commit conventions, and the pull request workflow.
 
-## Development Setup
+For development environment setup, tools, and project structure, see the [Development Guide](README.md).
 
-### Prerequisites
-
-- **Nix**: Install Nix with flakes support ([Determinate Systems installer](https://install.determinate.systems/) recommended)
-- **direnv**: Install direnv for automatic environment activation ([installation guide](https://direnv.net/docs/installation.html))
-
-### Getting Started
+## Getting Started
 
 1. **Fork and clone the repository**:
    ```bash
@@ -50,7 +45,7 @@ Thank you for your interest in contributing to the Nushell Operator! This guide 
 3. **Test locally with Kind**:
    ```bash
    op-tests          # Run tests
-   op-build          # Build operator
+   op-build          # Package and load the operator image
    # Apply test configurations and verify functionality
    ```
 
@@ -67,33 +62,11 @@ Thank you for your interest in contributing to the Nushell Operator! This guide 
 
 ### Testing
 
-#### Running Tests
+Run the suite with `op-tests` (default profile) or `op-tests-ci` (CI profile, JUnit XML). See [testing.md](testing.md) for the test organization, nextest usage, and the mock/script-execution test patterns.
 
-```bash
-# Run all tests
-op-tests
+When writing tests:
 
-# Run specific test modules
-cargo nextest run --manifest-path operator/Cargo.toml config
-cargo nextest run --manifest-path operator/Cargo.toml reconciler
-cargo nextest run --manifest-path operator/Cargo.toml manager
-
-# Run tests with specific patterns
-cargo nextest run --manifest-path operator/Cargo.toml test_reconcile
-
-# Generate coverage report
-op-coverage
-```
-
-#### Test Categories
-
-- **Unit tests**: Test individual functions and modules
-- **Integration tests**: Test script execution and Kubernetes interactions
-- **Controller tests**: Test full reconciliation loops with mock Kubernetes API
-
-#### Writing Tests
-
-- Place unit tests in separate files under `operator/test/`
+- Place unit tests in separate files under `operator/test/`, mirroring the `src/` layout
 - Use descriptive test names that explain the scenario
 - Include both positive and negative test cases
 - Mock external dependencies when possible
@@ -116,7 +89,7 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 
 1. **Start local cluster**:
    ```bash
-   op-tests
+   cluster-start
    ```
 
 2. **Build and load image**:
@@ -168,62 +141,14 @@ docker build -f operator/docker/Dockerfile operator/ -t nuop:local
 - **Documentation**: Update docs for user-facing changes
 - **Tests**: Include tests for new functionality
 
-## Code Organization
+### Review Checklist
 
-### Project Structure
-
-```
-operator/
-├── src/nuop/           # Main operator code
-│   ├── manager/        # Manager mode implementation
-│   ├── reconciler/     # Core reconciliation logic
-│   ├── config.rs       # Configuration handling
-│   └── ...
-├── scripts/            # Example operator scripts
-├── docker/             # Container build files
-└── nix/               # Nix build configuration
-```
-
-### Key Components
-
-- **Reconciler**: Core logic for watching and reconciling resources
-- **Manager**: Manages multiple operator instances (manager mode)
-- **Config**: Handles script discovery and configuration
-- **Scripts**: Example Nushell operator implementations
-
-## Development Environment Details
-
-### Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `op-build` | Build and load the operator Docker image into kind |
-| `op-buildx` | Build and push multi-arch Docker images |
-| `op-tests` | Run all tests (default profile) |
-| `op-tests-ci` | Run all tests with the CI profile (JUnit XML) |
-| `op-coverage` | Generate code coverage ([docs](coverage.md)) |
-| `op-clippy` | Run Rust linter |
-| `op-fmt` | Format Rust code |
-| `op-crds` | Generate CRD manifests |
-| `op-clean` | Clean cargo build artifacts |
-| `cluster-start` | Start colima and the kind cluster |
-| `tilt-up` | Start colima, kind, and tilt |
-| `tilt-down` | Stop tilt |
-| `act-test` | Run the test workflow locally with act |
-| `act-buildx` | Run the buildx workflow locally with act |
-
-| `op-run-*` | Run operator in different modes |
-
-### Development Shells
-
-- **Default** (`nix develop`): Full development environment
-- **CI** (`nix develop .#ci`): Minimal environment for testing
-
-### Troubleshooting Development Issues
-
-- **Nix/direnv issues**: Try `direnv reload` or restart your shell
-- **Test failures**: Ensure you've run `op-tests` in the development environment
-- **Build issues**: Ensure you're in the development shell (`direnv status`)
+- [ ] Tests pass (`op-tests`)
+- [ ] Formatting is clean (`op-fmt`)
+- [ ] Linting is clean (`op-clippy`)
+- [ ] New behavior is covered by tests under `operator/test/`
+- [ ] Commit messages follow the conventional format
+- [ ] User-facing docs are updated
 
 ## Getting Help
 

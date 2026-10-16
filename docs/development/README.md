@@ -52,15 +52,14 @@ The project uses Nix flakes for reproducible development environments with two c
 | `op-fmt` | Format Rust code |
 | `op-crds` | Generate CRD manifests |
 | `op-clean` | Clean cargo build artifacts |
+| `op-run-standard` | Run operator in standard mode locally |
+| `op-run-manager` | Run operator in manager mode locally |
+| `op-run-managed` | Run operator in managed mode locally |
 | `cluster-start` | Start colima and the kind cluster |
 | `tilt-up` | Start colima, kind, and tilt |
 | `tilt-down` | Stop tilt |
 | `act-test` | Run the test workflow locally with act |
 | `act-buildx` | Run the buildx workflow locally with act |
-
-| `op-run-standard` | Run operator in standard mode locally |
-| `op-run-manager` | Run operator in manager mode locally |
-| `op-run-managed` | Run operator in managed mode locally |
 
 ### Manual Environment Setup
 
@@ -90,6 +89,8 @@ cargo nextest run --manifest-path operator/Cargo.toml standard
 # Generate coverage report
 op-coverage
 ```
+
+See [testing.md](testing.md) for the test organization and [coverage.md](coverage.md) for coverage tooling.
 
 ## Local Development Workflow
 
@@ -124,11 +125,18 @@ nix flake show
 │   │   ├── reconciler/ # Core reconciliation logic
 │   │   └── config.rs   # Configuration handling
 │   ├── scripts/        # Example operator scripts
+│   ├── test/           # Test files (mirrors src/ layout)
 │   └── docker/         # Container build files
-└── nix/                # Nix build configuration
+└── nix/                # Nix build configuration (repo root)
 ```
 
 ## Troubleshooting
+
+### Nix / direnv Issues
+
+- **Environment not active**: Run `direnv reload` or restart your shell
+- **Build issues**: Ensure you're in the development shell (`direnv status`)
+- **Test failures**: Ensure you've run `op-tests` inside the development environment
 
 ### Script Issues
 
@@ -155,4 +163,4 @@ For general Kubernetes debugging, see:
 
 ## Contributing
 
-See [Contributing Guidelines](CONTRIBUTING.md) for detailed information on code style, testing, and submitting pull requests.
+See [contributing.md](contributing.md) for the PR process, code style, and commit conventions.

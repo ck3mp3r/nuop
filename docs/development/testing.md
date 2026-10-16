@@ -1,6 +1,71 @@
 # Testing Guide
 
-This guide covers testing strategies specific to the Nushell Operator, focusing on script testing and operator validation.
+This guide covers the test organization and testing strategies for the Nushell Operator.
+
+## Test Organization
+
+Rust tests live under `operator/test/`, mirroring the `src/` module hierarchy:
+
+```
+operator/test/nuop/
+├── manager/
+│   └── resources/          # Resource generation tests
+└── reconciler/
+    ├── controller/         # Reconcile, error handling, scenarios
+    ├── managed/            # Managed-mode tests
+    └── standard/           # Standard-mode tests
+```
+
+Test files are declared from their production module with `#[cfg(test)]` and a `#[path]` attribute. No test file may exceed 500 lines; split large files into topical subfiles under a subdirectory of the same name.
+
+## Running Tests
+
+`cargo-nextest` is the test runner. Profiles live in `operator/.config/nextest.toml`.
+
+```bash
+# Run all tests (default profile)
+op-tests
+
+# Run all tests with the CI profile (JUnit XML output)
+op-tests-ci
+
+# Run specific test modules
+cargo nextest run --manifest-path operator/Cargo.toml config
+cargo nextest run --manifest-path operator/Cargo.toml reconciler
+cargo nextest run --manifest-path operator/Cargo.toml manager
+
+# Run tests matching a pattern
+cargo nextest run --manifest-path operator/Cargo.toml test_reconcile
+```
+
+## Test Categories
+
+- **Unit tests**: Test individual functions and modules
+- **Controller tests**: Test full reconciliation loops with a mock Kubernetes API
+- **Script-execution tests**: Run real Nushell scripts through the reconciler
+
+### Mock Kubernetes API
+
+Controller tests use `tower_test::mock` to stand in for the Kubernetes API server. A test builds a mock service, spawns a task that answers the expected requests, and asserts the resulting `Action`:
+
+```rust
+let (mock_service, mut handle) = mock::pair::<Request<Body>, Response<Body>>();
+let client = Client::new(mock_service, "default");
+```
+
+### Script-Execution Tests
+
+Tests that run real Nushell scripts are skipped when the `nu` binary is not on `PATH`. Guard them with the `should_skip_script_tests()` helper:
+
+```rust
+#[tokio::test]
+async fn test_reconcile_active_no_changes() {
+    if should_skip_script_tests() {
+        return;
+    }
+    // ...
+}
+```
 
 ## Script Testing
 
@@ -90,17 +155,7 @@ def test_reconcile [script_path: string, test_data: string] {
 }
 ```
 
-## Operator Testing
-
-### Running Tests
-
-Run the Rust test suite:
-
-```bash
-op-tests  # Run all unit and integration tests
-```
-
-### Testing Deployment Modes
+## Testing Deployment Modes
 
 **Standard Mode Testing**:
 ```bash
@@ -126,7 +181,7 @@ kubectl apply -f docs/examples/minimal.yaml
 op-run-managed
 ```
 
-### Integration Testing with Kubernetes
+## Integration Testing with Kubernetes
 
 Test your scripts against a real Kubernetes cluster:
 
@@ -180,3 +235,9 @@ For general Kubernetes testing strategies and broader testing approaches, see:
 - [Kubernetes Testing Best Practices](https://kubernetes.io/blog/2019/03/22/kubernetes-end-to-end-testing-for-everyone/)
 - [Testing Kubernetes Operators](https://sdk.operatorframework.io/docs/building-operators/golang/testing/)
 - [Nushell Testing Documentation](https://www.nushell.sh/book/testing.html)
+
+## Related Documentation
+
+- [Development Guide](README.md)
+- [Code Coverage](coverage.md)
+- [Contributing](contributing.md)
