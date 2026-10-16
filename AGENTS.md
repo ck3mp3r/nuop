@@ -86,26 +86,24 @@ mod test;
 
 The feature is defined in `crates/agnt-a2a/Cargo.toml`, `crates/agnt-core/Cargo.toml`, `crates/agnt-tui/Cargo.toml`, and `crates/agnt-plugin/Cargo.toml`. Enabling it on `agnt-plugin` or `agnt-tui` propagates to `agnt-core` and `agnt-a2a`.
 
-`cargo nextest` is the test runner. Profiles live in `.config/nextest.toml`:
+`cargo nextest` is the test runner. Profiles live in `operator/.config/nextest.toml`:
 
 | Profile | Purpose |
 |---------|---------|
 | `default` | Unit tests only — fast feedback, high parallelism |
-| `integration` | All tests — lower parallelism, one retry for flaky server tests |
+| `integration` | Reserved for future integration tests — unused (nuop has no `integration` feature) |
 | `ci` | Full suite for CI — no retries, JUnit XML output |
 
 Commands:
 
 ```bash
-cargo nextest run                                  # unit tests only (fast)
-cargo nextest run --features integration           # unit + integration
-cargo nextest run --features integration --profile integration  # integration with retries
-cargo nextest run --features integration --profile ci           # CI run, JUnit output
+cargo nextest run --manifest-path operator/Cargo.toml                 # unit tests (fast)
+cargo nextest run --profile ci --manifest-path operator/Cargo.toml   # CI run, JUnit output
 ```
 
-In the Nix dev shell these are wrapped as `tests` (unit only), `tests-all` (unit + integration), and `tests-integration` (integration only, with retries).
+In the Nix dev shell these are wrapped as `op-tests` (default profile) and `op-tests-ci` (CI profile, JUnit output).
 
-The pre-push hook runs the full suite: `cargo clippy --all-features --tests -- -D warnings` lints all test code including integration modules, then `cargo nextest run --features integration --profile ci` runs everything and writes `junit.xml`.
+The pre-push hook runs the full suite: `cargo clippy --manifest-path operator/Cargo.toml -- -D warnings` lints all test code, then `cargo nextest run --profile ci --manifest-path operator/Cargo.toml` runs everything and writes `junit.xml`.
 
 Integration test modules:
 

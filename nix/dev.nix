@@ -79,7 +79,8 @@ in {
       kind
       kubectl
       tilt
-      cargo-tarpaulin
+      cargo-llvm-cov
+      cargo-nextest
     ]
     ++ [
       cluster-start
@@ -91,6 +92,7 @@ in {
       tools.op-crds
       tools.op-build
       tools.op-tests
+      tools.op-tests-ci
       tools.act-test
       tools.op-clippy
       tools.op-fmt
