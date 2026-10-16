@@ -7,7 +7,7 @@ It is a lightweight alternative to the [CockroachDB operator](https://github.com
 ## Requirements
 
 - The `CrdbCluster` CRD (`crdbclusters.crdb.cockroachlabs.com`) installed in the cluster. The CRD is sourced from the `cockroachdb/helm-charts` repository, not from this repository.
-- RBAC that allows the operator to read and patch `crdbclusters` and `crdbclusters/status`, and to manage `statefulsets` and `services`.
+- RBAC that allows the operator to read and patch `crdbclusters` and `crdbclusters/status`, and to manage `statefulsets`, `services`, and `secrets`.
 - The Nushell runtime and `kubectl` on the operator's PATH.
 
 The script is mode-agnostic. It does not know whether it runs in Standard or Managed mode.
@@ -19,6 +19,7 @@ The script is mode-agnostic. It does not know whether it runs in Standard or Man
 | StatefulSet | `<metadata.name>` | One pod per node in `spec.regions`, container `db` |
 | Discovery Service | `<metadata.name>` | Headless (`clusterIP: None`), `publishNotReadyAddresses: true` |
 | Public Service | `<metadata.name>-public` | `ClusterIP` |
+| Secret | `<metadata.name>-client` | Connection details: `host`, `port`, `database`, `user`, `sslmode`, `uri` |
 
 Both services expose the same three ports:
 
@@ -72,6 +73,16 @@ The script patches the `status` subresource:
 |-------|--------|
 | `status.conditions` | A `ClusterReady` condition: `False` while the StatefulSet is not fully ready, `True` when all replicas are ready |
 | `status.image` | The value of `spec.template.spec.image` |
+| `status.version` | The CockroachDB version extracted from the image tag, for example `v23.1.11` |
+| `status.readyNodes` | The number of ready StatefulSet replicas, `0` until the pods are ready |
+
+A client application reads the connection Secret with `envFrom`:
+
+```yaml
+envFrom:
+  - secretRef:
+      name: crdb-dev-client
+```
 
 ## Labels
 
@@ -93,7 +104,7 @@ The script uses a finalizer to ensure cleanup when a `CrdbCluster` is deleted:
 
 - `github.com/ck3mp3r-nuop-crdb-dev-finalizer`
 
-Finalization deletes the StatefulSet and both Services. It does not delete PVCs, so data survives a cluster deletion.
+Finalization deletes the StatefulSet, both Services, and the client Secret. It does not delete PVCs, so data survives a cluster deletion.
 
 ## Requeue Behavior
 
@@ -105,9 +116,9 @@ The `mod.nu` script follows the common operator pattern:
 
 1. **Configuration**: The `main config` function returns operator metadata including the script name, API group, version, target kind, finalizer identifier, and requeue timing.
 
-2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the three desired manifests, patches the `ClusterReady` condition to `False`, applies the manifests, patches `status.image`, and patches the `ClusterReady` condition to `True` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
+2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the four desired manifests, patches the `ClusterReady` condition to `False`, applies the manifests, patches `status.image`, `status.version`, and `status.readyNodes`, and patches the `ClusterReady` condition to `True` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
 
-3. **Finalization**: The `main finalize` function handles deletion events. It deletes the StatefulSet and both Services and returns exit code 0.
+3. **Finalization**: The `main finalize` function handles deletion events. It deletes the StatefulSet, both Services, and the client Secret and returns exit code 0.
 
 ### Execution Model
 
@@ -154,6 +165,7 @@ Apply the resource and check the result:
 kubectl apply -f crdb-cluster.yaml
 kubectl get statefulset crdb-dev
 kubectl get service crdb-dev crdb-dev-public
+kubectl get secret crdb-dev-client
 kubectl get crdbcluster crdb-dev -o jsonpath='{.status}'
 ```
 
@@ -172,7 +184,7 @@ This script targets local development. It differs from the full operator in thes
 - No security context, no `preStop` drain hook, no init containers.
 - No topology, ingress, node selectors, tolerations, or affinity.
 - No rolling upgrade orchestration or version checks.
-- No connection Secrets or ConfigMaps.
+- No ConfigMaps.
 
 ## Usage with Nushell Operator
 

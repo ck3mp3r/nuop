@@ -157,6 +157,32 @@ def build-public-service [name: string, namespace: string, ports: record, labels
   }
 }
 
+# Builds the client connection Secret
+# Name matches the full operator: <name>-client
+# Uses stringData so values stay plaintext in the script; the API server merges
+# stringData into data (base64) on write and does not persist stringData
+def build-client-secret [name: string, namespace: string, ports: record, labels: record] {
+  let host = $"($name)-public"
+  {
+    apiVersion: "v1"
+    kind: "Secret"
+    metadata: {
+      name: $"($name)-client"
+      namespace: $namespace
+      labels: $labels
+    }
+    type: "Opaque"
+    stringData: {
+      host: $host
+      port: ($ports.sql | into string)
+      database: "defaultdb"
+      user: "root"
+      sslmode: "disable"
+      uri: $"postgresql://root@($host):($ports.sql)/defaultdb?sslmode=disable"
+    }
+  }
+}
+
 # Builds the join string that seeds the first three pods
 def build-join-string [name: string, namespace: string, nodes: int, grpc_port: int] {
   let count = ([$nodes 3] | math min)
@@ -340,6 +366,18 @@ def contains-subset [desired: any, actual: any] {
   $desired == $actual
 }
 
+# Converts write-only Secret fields to their server-side form for comparison
+# The API server merges stringData into data (base64) and does not persist it,
+# so a manifest with stringData would otherwise register as drift on every pass
+def to-comparable [manifest: record] {
+  let string_data = ($manifest | get --optional stringData)
+  if $string_data == null {
+    return $manifest
+  }
+  let data = ($string_data | items {|key, value| {($key): ($value | encode base64)} } | into record)
+  $manifest | reject stringData | insert data $data
+}
+
 # Returns true when the resource is missing or differs from the desired manifest
 def resource-changed [manifest: record, namespace: string] {
   let kind = ($manifest.kind | str lowercase)
@@ -348,7 +386,7 @@ def resource-changed [manifest: record, namespace: string] {
   if $existing.exit_code != 0 {
     return true
   }
-  not (contains-subset $manifest ($existing.stdout | from json))
+  not (contains-subset (to-comparable $manifest) ($existing.stdout | from json))
 }
 
 # Applies the manifest when it is missing or differs, returns true when it changed
@@ -432,15 +470,14 @@ def patch-cluster-ready [name: string, namespace: string, generation: int, ready
   }
 }
 
-# Returns true when the StatefulSet reports all requested replicas as ready
-def statefulset-ready [name: string, namespace: string, replicas: int] {
+# Returns the number of ready StatefulSet replicas, or 0 when the StatefulSet is absent
+def statefulset-ready [name: string, namespace: string] {
   let result = (kubectl get statefulset $name -n $namespace -o json | complete)
   if $result.exit_code != 0 {
-    return false
+    return 0
   }
   let statefulset = ($result.stdout | from json)
-  let ready = ($statefulset.status | get --optional readyReplicas | default 0)
-  $ready == $replicas
+  $statefulset.status | get --optional readyReplicas | default 0
 }
 
 # Reconciliation logic for create/update events
@@ -460,9 +497,11 @@ def handle-reconcile [parsed: record] {
   let discovery_service = (build-discovery-service $name $namespace $ports $labels $selector)
   let public_service = (build-public-service $name $namespace $ports $labels $selector)
   let statefulset = (build-statefulset $name $namespace $spec $ports $image $nodes $labels $selector)
+  let client_secret = (build-client-secret $name $namespace $ports $labels)
 
   let current_ready = (get-cluster-ready $status)
-  let ready = (statefulset-ready $name $namespace $nodes)
+  let ready_count = (statefulset-ready $name $namespace)
+  let ready = ($ready_count == $nodes)
 
   mut changed = false
 
@@ -480,10 +519,16 @@ def handle-reconcile [parsed: record] {
   if (apply-resource $statefulset $namespace) {
     $changed = true
   }
+  if (apply-resource $client_secret $namespace) {
+    $changed = true
+  }
 
+  let version = ($image | split row ":" | last)
   let current_image = ($status | get --optional image | default "")
-  if $current_image != $image {
-    patch-status $name $namespace $generation {image: $image}
+  let current_version = ($status | get --optional version | default "")
+  let current_ready_nodes = ($status | get --optional readyNodes | default (-1))
+  if $current_image != $image or $current_version != $version or $current_ready_nodes != $ready_count {
+    patch-status $name $namespace $generation {image: $image, version: $version, readyNodes: $ready_count}
     $changed = true
   }
 
@@ -511,6 +556,7 @@ def handle-finalize [parsed: record] {
     {kind: "statefulset", name: $name}
     {kind: "service", name: $name}
     {kind: "service", name: $"($name)-public"}
+    {kind: "secret", name: $"($name)-client"}
   ]
 
   for target in $targets {

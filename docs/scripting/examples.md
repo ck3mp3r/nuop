@@ -99,6 +99,7 @@ The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local develo
 - StatefulSet `<metadata.name>` - one pod per node in `spec.regions`, container `db`
 - Discovery Service `<metadata.name>` - headless, for pod-to-pod DNS
 - Public Service `<metadata.name>-public` - `ClusterIP`, for clients
+- Secret `<metadata.name>-client` - connection details: `host`, `port`, `database`, `user`, `sslmode`, `uri`
 
 ### Spec Fields
 - `spec.template.spec.image` - CockroachDB container image (default `cockroachdb/cockroach:v23.1.11`)
@@ -137,7 +138,7 @@ spec:
 ### Finalizers
 - `github.com/ck3mp3r-nuop-crdb-dev-finalizer`
 
-Finalization deletes the StatefulSet and both Services. It does not delete PVCs, so data survives a cluster deletion.
+Finalization deletes the StatefulSet, both Services, and the client Secret. It does not delete PVCs, so data survives a cluster deletion.
 
 ### Limitations
 - Insecure mode only. TLS and certificates are not supported.
