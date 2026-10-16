@@ -7,7 +7,7 @@ It is a lightweight alternative to the [CockroachDB operator](https://github.com
 ## Requirements
 
 - The `CrdbCluster` CRD (`crdbclusters.crdb.cockroachlabs.com`) installed in the cluster. The CRD is sourced from the `cockroachdb/helm-charts` repository, not from this repository.
-- RBAC that allows the operator to read and patch `crdbclusters` and `crdbclusters/status`, and to manage `statefulsets`, `services`, and `secrets`.
+- RBAC that allows the operator to read and patch `crdbclusters` and `crdbclusters/status`, to manage `statefulsets`, `services`, and `secrets`, and to run `pods/exec` for cluster initialization.
 - The Nushell runtime and `kubectl` on the operator's PATH.
 
 The script is mode-agnostic. It does not know whether it runs in Standard or Managed mode.
@@ -116,7 +116,7 @@ The `mod.nu` script follows the common operator pattern:
 
 1. **Configuration**: The `main config` function returns operator metadata including the script name, API group, version, target kind, finalizer identifier, and requeue timing.
 
-2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the four desired manifests, patches the `ClusterReady` condition to `False`, applies the manifests, patches `status.image`, `status.version`, and `status.readyNodes`, and patches the `ClusterReady` condition to `True` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
+2. **Reconciliation**: The `main reconcile` function handles create/update events. It builds the four desired manifests, patches the `ClusterReady` condition to `False`, applies the manifests, runs `cockroach init` against pod-0 via `kubectl exec` to bootstrap the cluster, patches `status.image`, `status.version`, and `status.readyNodes`, and patches the `ClusterReady` condition to `True` when all replicas are ready. It returns exit code 0 (no change) or 2 (changed).
 
 3. **Finalization**: The `main finalize` function handles deletion events. It deletes the StatefulSet, both Services, and the client Secret and returns exit code 0.
 
