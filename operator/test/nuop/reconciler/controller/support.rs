@@ -85,7 +85,7 @@ pub(crate) fn create_test_object(
 
 pub(crate) fn get_test_script_path(script_name: &str) -> PathBuf {
     PathBuf::from(format!(
-        "src/nuop/reconciler/controller_tests/scripts/{script_name}/mod.nu",
+        "test/fixtures/controller/scripts/{script_name}/mod.nu",
     ))
 }
 

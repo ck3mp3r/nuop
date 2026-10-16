@@ -11,11 +11,11 @@ COPY --from=nix-result bin/operator /bin/
 COPY ./docker/entrypoint /bin/
 COPY ./docker/init-sources /bin/
 COPY ./docker/install-crds /bin/
-COPY ./scripts /scripts
+COPY ./scripts /sources
 
-RUN chown -R nushell:nushell /scripts
+RUN chown -R nushell:nushell /sources
 
 USER nushell
-WORKDIR /scripts
+WORKDIR /sources
 
 ENTRYPOINT ["entrypoint"]

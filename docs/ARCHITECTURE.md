@@ -80,7 +80,7 @@ Each script implements three main functions:
 │                                                             │
 │  ┌─────────────────┐    ┌─────────────────┐                │
 │  │ Script Discovery│    │ Resource        │                │
-│  │ /scripts/*/     │───►│ Controllers     │                │
+│  │ /sources/*/     │───►│ Controllers     │                │
 │  │ mod.nu          │    │ (one per script)│                │
 │  └─────────────────┘    └─────────────────┘                │
 │                                 │                           │
@@ -93,7 +93,7 @@ Each script implements three main functions:
 ```
 
 **Flow**:
-1. Operator starts and scans `/scripts` directory
+1. Operator starts and scans `/sources` directory
 2. For each script directory containing `mod.nu`:
    - Executes `nu mod.nu config` to get metadata
    - Creates a controller for the specified resource kind

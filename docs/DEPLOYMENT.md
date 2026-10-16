@@ -40,7 +40,7 @@ Bundle your scripts into a custom container image:
 FROM ghcr.io/ck3mp3r/nuop:latest
 
 # Copy your operator scripts
-COPY scripts/ /scripts/
+COPY scripts/ /sources/
 
 # Scripts will be automatically discovered and registered
 ```
@@ -168,8 +168,8 @@ spec:
         env:
         - name: RUST_LOG
           value: info
-        - name: NUOP_SCRIPT_PATH
-          value: /scripts
+        - name: NUOP_SOURCES_PATH
+          value: /sources
         resources:
           requests:
             memory: "64Mi"

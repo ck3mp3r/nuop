@@ -286,7 +286,7 @@ Use the operator's built-in testing capabilities:
 
 ```bash
 # Run operator in standard mode with your scripts
-NUOP_SCRIPT_PATH=./scripts op-run-standard
+NUOP_SOURCES_PATH=./scripts op-run-standard
 
 # Apply test resources and observe logs
 kubectl apply -f test-resources.yaml
