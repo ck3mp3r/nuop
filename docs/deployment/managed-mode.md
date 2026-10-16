@@ -30,7 +30,7 @@ spec:
         env:
         - name: NUOP_MODE
           value: manager
-        - name: RUST_LOG
+        - name: LOG_LEVEL
           value: info
 ```
 

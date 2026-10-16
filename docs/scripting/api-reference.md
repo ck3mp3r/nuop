@@ -44,7 +44,7 @@ Scripts have access to these environment variables:
 |----------|-------------|
 | `KUBECONFIG` | Path to Kubernetes config file |
 | `NAMESPACE` | Namespace the operator is running in |
-| `RUST_LOG` | Log level configuration |
+| `LOG_LEVEL` | Log level configuration |
 
 ## Common Patterns
 
@@ -170,7 +170,7 @@ Use the operator's built-in testing capabilities:
 
 ```bash
 # Run operator in standard mode with your scripts
-NUOP_SOURCES_PATH=./scripts op-run-standard
+NUOP_SOURCES_PATH=$PWD/docs/examples/operators op-run-standard
 
 # Apply test resources and observe logs
 kubectl apply -f test-resources.yaml
@@ -225,7 +225,7 @@ echo '{"test": "data"}' | nu docs/examples/operators/my-operator/mod.nu reconcil
 nu --ide-check 100 docs/examples/operators/my-operator/mod.nu
 
 # Run with verbose logging
-RUST_LOG=debug op-run-standard
+LOG_LEVEL=debug op-run-standard
 
 # Examine operator logs
 kubectl logs -l app.kubernetes.io/name=nuop --tail=100 -f

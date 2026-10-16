@@ -10,7 +10,7 @@ metadata:
 spec:
   serviceAccountName: config-replicator-sa
   env:
-    - name: RUST_LOG
+    - name: LOG_LEVEL
       value: info
   mappings:
     - name: config-replicator
