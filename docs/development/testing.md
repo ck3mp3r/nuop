@@ -75,13 +75,13 @@ Test each script function independently to ensure they behave correctly:
 
 ```bash
 # Test configuration function
-echo '{}' | nu docs/examples/operators/my-operator/mod.nu config
+echo '{}' | nu docs/examples/my-operator/scripts/mod.nu config
 
 # Test reconcile with sample data
-cat test-data/configmap.yaml | nu docs/examples/operators/my-operator/mod.nu reconcile
+cat test-data/configmap.yaml | nu docs/examples/my-operator/scripts/mod.nu reconcile
 
 # Test finalize with deletion scenario
-cat test-data/deleting-configmap.yaml | nu docs/examples/operators/my-operator/mod.nu finalize
+cat test-data/deleting-configmap.yaml | nu docs/examples/my-operator/scripts/mod.nu finalize
 ```
 
 ### Creating Test Data
@@ -172,7 +172,7 @@ kubectl apply -f test-data/configmap.yaml
 op-run-manager
 
 # Apply NuOperator resource
-kubectl apply -f docs/examples/managed/minimal.yaml
+kubectl apply -f docs/examples/templates/minimal.yaml
 ```
 
 **Managed Mode Testing**:

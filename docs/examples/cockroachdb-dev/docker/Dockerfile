@@ -5,14 +5,14 @@
 # installed automatically on startup by install-crds.
 #
 # Build from the repository root, so the script is in the build context:
-#   docker build -t cockroachdb-dev -f docs/examples/operators/cockroachdb-dev/docker/Dockerfile docs/examples/operators/cockroachdb-dev/
+#   docker build -t cockroachdb-dev -f docs/examples/cockroachdb-dev/docker/Dockerfile docs/examples/cockroachdb-dev/
 
 FROM ghcr.io/ck3mp3r/nuop:latest
 
 USER root
 
 # Operator script — copied from the build context
-COPY mod.nu /sources/cockroachdb-dev/scripts/mod.nu
+COPY scripts/mod.nu /sources/cockroachdb-dev/scripts/mod.nu
 
 # CrdbCluster CRD — fetched from the cockroach-operator repository
 RUN mkdir -p /sources/cockroachdb-dev/crds \

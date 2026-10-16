@@ -1,6 +1,6 @@
 # Script Examples
 
-See the [docs/examples/operators](../examples/operators/) directory for complete working examples:
+See the [docs/examples](../examples/) directory for complete working examples:
 
 - **config-replicator**: Replicates ConfigMaps across namespaces
 - **secret-cloner**: Replicates Secrets with targeting controls
@@ -8,7 +8,7 @@ See the [docs/examples/operators](../examples/operators/) directory for complete
 
 These examples demonstrate real-world patterns and can serve as templates for your own operators.
 
-## Config Replicator (`docs/examples/operators/config-replicator/`)
+## Config Replicator (`docs/examples/config-replicator/`)
 
 The Config Replicator automatically replicates ConfigMaps across namespaces based on labels and annotations.
 
@@ -48,7 +48,7 @@ data:
 
 This ConfigMap will be replicated to the `production` and `staging` namespaces only.
 
-## Secret Cloner (`docs/examples/operators/secret-cloner/`)
+## Secret Cloner (`docs/examples/secret-cloner/`)
 
 The Secret Cloner automatically replicates Secrets across namespaces with the same targeting system as the Config Replicator.
 
@@ -88,7 +88,7 @@ data:
 
 This Secret will be replicated to all namespaces except `kube-system` and `monitoring`.
 
-## CockroachDB Dev Operator (`docs/examples/operators/cockroachdb-dev/`)
+## CockroachDB Dev Operator (`docs/examples/cockroachdb-dev/`)
 
 The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local development. It is a lightweight alternative to the deprecated [CockroachDB Kubernetes operator](https://github.com/cockroachdb/cockroach-operator) and produces the same external interface, so Helm charts work the same in development and production.
 
@@ -163,4 +163,4 @@ Both operators are configured to requeue after 60 seconds when no changes are de
 
 - [Script Development Tutorial](README.md)
 - [Script API Reference](api-reference.md)
-- [docs/examples/operators/](../examples/operators/)
+- [docs/examples/](../examples/)

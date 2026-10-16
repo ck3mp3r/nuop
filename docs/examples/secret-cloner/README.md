@@ -1,10 +1,10 @@
-# Config Replicator
+# Secret Cloner
 
-The Config Replicator automatically replicates ConfigMaps across namespaces based on labels and annotations. It is a ready-to-use Nushell operator script for the Nushell Operator (nuop).
+The Secret Cloner automatically replicates Secrets across namespaces with the same targeting system as the Config Replicator. It is a ready-to-use Nushell operator script for the Nushell Operator (nuop).
 
 ## Required Labels
 
-- `app.kubernetes.io/replicate: "yes"` - Marks the ConfigMap for replication
+- `app.kubernetes.io/replicate: "yes"` - Marks the Secret for replication
 
 ## Optional Annotations
 
@@ -16,37 +16,37 @@ The Config Replicator automatically replicates ConfigMaps across namespaces base
 - **Default**: If no target namespaces are specified, replicates to all namespaces except the source
 - **Include Mode**: Replicates only to the specified namespaces in `target-namespaces`
 - **Exclude Mode**: Replicates to all namespaces except those specified in `target-namespaces`
-- **Automatic Cleanup**: When the source ConfigMap is deleted, all replicas are automatically removed
-- **Change Detection**: Only updates replicas when the source ConfigMap data or relevant labels change
+- **Automatic Cleanup**: When the source Secret is deleted, all replicas are automatically removed
+- **Change Detection**: Only updates replicas when the source Secret data, type, or relevant labels change
+- **Security**: Maintains original Secret type and data encoding
 
 ## Example Usage
 
 ```yaml
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
-  name: app-config
+  name: database-credentials
   namespace: default
   labels:
     app.kubernetes.io/replicate: "yes"
   annotations:
-    app.kubernetes.io/target-namespaces: "production,staging"
-    app.kubernetes.io/target-method: "include"
+    app.kubernetes.io/target-namespaces: "kube-system,monitoring"
+    app.kubernetes.io/target-method: "exclude"
+type: Opaque
 data:
-  config.yaml: |
-    app:
-      environment: production
-      debug: false
+  username: YWRtaW4=  # base64 encoded
+  password: MWYyZDFlMmU2N2Rm  # base64 encoded
 ```
 
-This ConfigMap will be replicated to the `production` and `staging` namespaces only.
+This Secret will be replicated to all namespaces except `kube-system` and `monitoring`.
 
 ## Replica Identification
 
 The operator adds management labels to replicated resources:
 
-- `app.kubernetes.io/managed-by: "github.com-ck3mp3r-nuop-cfg-repktr"`
-- `app.kubernetes.io/replicated-by: "github.com-ck3mp3r-nuop-cfg-repktr"`
+- `app.kubernetes.io/managed-by: "github.com-ck3mp3r-nuop-sec-clnr"`
+- `app.kubernetes.io/replicated-by: "github.com-ck3mp3r-nuop-sec-clnr"`
 
 These labels identify which resources are managed by the operator and prevent infinite replication loops.
 
@@ -54,7 +54,7 @@ These labels identify which resources are managed by the operator and prevent in
 
 The script uses a finalizer to ensure proper cleanup when source resources are deleted:
 
-- `github.com/ck3mp3r-nuop-cfg-repktr-finalizer`
+- `github.com/ck3mp3r-nuop-sec-clnr-finalizer`
 
 ## Requeue Behavior
 
@@ -75,9 +75,9 @@ The `mod.nu` script follows the common operator pattern:
 Scripts are executed via the Nushell interpreter:
 
 ```bash
-nu docs/examples/operators/config-replicator/mod.nu config      # Get configuration
-nu docs/examples/operators/config-replicator/mod.nu reconcile   # Handle resource changes
-nu docs/examples/operators/config-replicator/mod.nu finalize    # Handle resource deletion
+nu docs/examples/secret-cloner/scripts/mod.nu config      # Get configuration
+nu docs/examples/secret-cloner/scripts/mod.nu reconcile   # Handle resource changes
+nu docs/examples/secret-cloner/scripts/mod.nu finalize    # Handle resource deletion
 ```
 
 In containers, scripts are at `/sources/<op-name>/scripts/mod.nu`.
@@ -90,6 +90,6 @@ To use this script:
 
 1. Include it in your custom operator image
 2. Deploy the image to your Kubernetes cluster
-3. Apply ConfigMaps with the appropriate labels to trigger replication
+3. Apply Secrets with the appropriate labels to trigger replication
 
 The operator will automatically detect and manage resources that match its label selectors.

@@ -242,7 +242,7 @@ kubectl apply --dry-run=client -f crds/mycrd.yaml
 
 See complete examples in:
 
-- [docs/examples/standard/custom-crd-operator.yaml](../examples/standard/custom-crd-operator.yaml) - Full example with CRD, operator, and deployment
+- [docs/examples/templates/custom-crd-operator.yaml](../examples/templates/custom-crd-operator.yaml) - Full example with CRD, operator, and deployment
 
 ## Related Documentation
 

@@ -139,7 +139,7 @@ Test individual functions:
 
 ```bash
 # Test configuration returns valid format
-config_result=$(echo '{}' | nu docs/examples/operators/my-operator/mod.nu config)
+config_result=$(echo '{}' | nu docs/examples/my-operator/scripts/mod.nu config)
 echo $config_result | jq '.name'  # Should return script name
 ```
 
@@ -161,7 +161,7 @@ data:
 EOF
 
 # Get resource and test script
-kubectl get configmap test-configmap -o json | nu docs/examples/operators/my-operator/mod.nu reconcile
+kubectl get configmap test-configmap -o json | nu docs/examples/my-operator/scripts/mod.nu reconcile
 ```
 
 ### Local Development
@@ -170,7 +170,7 @@ Use the operator's built-in testing capabilities:
 
 ```bash
 # Run operator in standard mode with your scripts
-NUOP_SOURCES_PATH=$PWD/docs/examples/operators op-run-standard
+NUOP_SOURCES_PATH=$PWD/docs/examples op-run-standard
 
 # Apply test resources and observe logs
 kubectl apply -f test-resources.yaml
@@ -219,10 +219,10 @@ kubectl logs -l app.kubernetes.io/name=nuop -f
 
 ```bash
 # Test script directly
-echo '{"test": "data"}' | nu docs/examples/operators/my-operator/mod.nu reconcile
+echo '{"test": "data"}' | nu docs/examples/my-operator/scripts/mod.nu reconcile
 
 # Check script syntax
-nu --ide-check 100 docs/examples/operators/my-operator/mod.nu
+nu --ide-check 100 docs/examples/my-operator/scripts/mod.nu
 
 # Run with verbose logging
 LOG_LEVEL=debug op-run-standard

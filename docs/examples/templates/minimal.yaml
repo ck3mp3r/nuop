@@ -14,5 +14,5 @@ spec:
       version: v1
       kind: ConfigMap
   sources:
-    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/operators
-      path: scripts
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/config-replicator/scripts
+      path: config-replicator

@@ -21,7 +21,7 @@ spec:
       value: info
   sources:
     # Operator script from the nuop repository
-    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/operators/cockroachdb-dev
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/cockroachdb-dev/scripts
       path: cockroachdb-dev
       source_type: scripts
     # CrdbCluster CRD from the cockroach-operator repository

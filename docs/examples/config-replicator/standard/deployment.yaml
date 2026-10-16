@@ -1,16 +1,17 @@
 ---
-# CockroachDB Dev Operator — Standard Mode Deployment
+# Config Replicator — Standard Mode Deployment
 #
-# Runs the custom image built from docker/Dockerfile. The image bundles the
-# operator script and the CrdbCluster CRD, which install-crds applies on startup.
+# Runs the operator in Standard mode. The image must bundle the operator script
+# under /sources/config-replicator/scripts/.
 #
-# Build the image first:
-#   docker build -t cockroachdb-dev -f docs/examples/operators/cockroachdb-dev/docker/Dockerfile docs/examples/operators/cockroachdb-dev/
+# Build a custom image with the script bundled:
+#   FROM ghcr.io/ck3mp3r/nuop:latest
+#   COPY scripts/ /sources/config-replicator/scripts/
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cockroachdb-dev
+  name: config-replicator
   namespace: default
   labels:
     app.kubernetes.io/name: nuop
@@ -19,17 +20,17 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cockroachdb-dev
+      app: config-replicator
   template:
     metadata:
       labels:
-        app: cockroachdb-dev
+        app: config-replicator
         app.kubernetes.io/name: nuop
     spec:
-      serviceAccountName: cockroachdb-dev-sa
+      serviceAccountName: config-replicator-sa
       containers:
         - name: operator
-          image: cockroachdb-dev:latest
+          image: ghcr.io/ck3mp3r/nuop:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: NUOP_MODE

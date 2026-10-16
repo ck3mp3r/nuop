@@ -114,9 +114,9 @@ The `mod.nu` script follows the common operator pattern:
 Scripts are executed via the Nushell interpreter:
 
 ```bash
-nu docs/examples/operators/cockroachdb-dev/mod.nu config      # Get configuration
-nu --stdin docs/examples/operators/cockroachdb-dev/mod.nu reconcile   # Handle resource changes
-nu --stdin docs/examples/operators/cockroachdb-dev/mod.nu finalize    # Handle resource deletion
+nu docs/examples/cockroachdb-dev/scripts/mod.nu config      # Get configuration
+nu --stdin docs/examples/cockroachdb-dev/scripts/mod.nu reconcile   # Handle resource changes
+nu --stdin docs/examples/cockroachdb-dev/scripts/mod.nu finalize    # Handle resource deletion
 ```
 
 In containers, scripts are at `/sources/<op-name>/scripts/mod.nu`.
