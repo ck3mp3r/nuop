@@ -335,7 +335,7 @@ def contains-subset [desired: any, actual: any] {
 
 # Returns true when the resource is missing or differs from the desired manifest
 def resource-changed [manifest: record, namespace: string] {
-  let kind = ($manifest.kind | str lowercase)
+  let kind = ($manifest.kind | str downcase)
   let name = $manifest.metadata.name
   let existing = (kubectl get $kind $name -n $namespace -o json | complete)
   if $existing.exit_code != 0 {
