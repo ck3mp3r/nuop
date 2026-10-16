@@ -38,7 +38,7 @@ stages = ["pre-commit"]
 id = "clippy"
 name = "cargo clippy"
 language = "system"
-entry = "cargo clippy --manifest-path operator/Cargo.toml -- -D warnings"
+entry = "cargo clippy --manifest-path operator/Cargo.toml --tests -- -D warnings"
 pass_filenames = false
 stages = ["pre-push"]
 
