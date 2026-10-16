@@ -142,7 +142,7 @@ spec:
             - name: RUST_LOG
               value: info
             # Optional: Override the sources root
-            # - name: SOURCES_PATH
+            # - name: NUOP_SOURCES_PATH
             #   value: /custom/sources
           resources:
             requests:
