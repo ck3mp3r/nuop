@@ -11,9 +11,6 @@ FROM ghcr.io/ck3mp3r/nuop:latest
 
 USER root
 
-# Remove the default scripts from base image to avoid permission issues
-RUN rm -rf /scripts/*
-
 # Copy custom CRD - will be auto-installed on startup
 COPY ./crds/ /sources/greeting-operator/crds/
 

@@ -5,19 +5,19 @@
 
 print "🔍 Checking for CRDs to install..."
 
-let SOURCES_PATH = ($env | get --optional SOURCES_PATH | default "/sources")
+let NUOP_SOURCES_PATH = ($env | get --optional NUOP_SOURCES_PATH | default "/sources")
 
 # Check if sources directory exists
-if not ($SOURCES_PATH | path exists) {
-  print $"ℹ️  No ($SOURCES_PATH) directory found - skipping CRD installation"
+if not ($NUOP_SOURCES_PATH | path exists) {
+  print $"ℹ️  No ($NUOP_SOURCES_PATH) directory found - skipping CRD installation"
   exit 0
 }
 
 # Find all YAML files under any crds/ directory
-let crd_files = (glob $"($SOURCES_PATH)/**/crds/**/*.{yaml,yml}")
+let crd_files = (glob $"($NUOP_SOURCES_PATH)/**/crds/**/*.{yaml,yml}")
 
 if ($crd_files | is-empty) {
-  print $"ℹ️  No CRD files found under ($SOURCES_PATH)/**/crds/"
+  print $"ℹ️  No CRD files found under ($NUOP_SOURCES_PATH)/**/crds/"
   exit 0
 }
 

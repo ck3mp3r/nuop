@@ -2,7 +2,7 @@
 
 # Get NUOP_MODE, defaulting to "standard"
 let mode = ($env | get --optional NUOP_MODE | default "standard")
-let sources_path = ($env | get --optional SOURCES_PATH | default "/sources")
+let sources_path = ($env | get --optional NUOP_SOURCES_PATH | default "/sources")
 
 if $mode == "init" {
   init-sources

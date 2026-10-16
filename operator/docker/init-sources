@@ -2,7 +2,7 @@
 
 print "Running init script..."
 
-let SOURCES_PATH = $env | get --optional "SOURCES_PATH" | default "/sources"
+let NUOP_SOURCES_PATH = $env | get --optional "NUOP_SOURCES_PATH" | default "/sources"
 let SECRETS_PATH = $env | get --optional "SECRETS_PATH" | default "/secrets"
 let CONFIG_PATH = $env | get --optional "CONFIG_PATH" | default "/config"
 
@@ -20,7 +20,7 @@ def fetch_source [config] {
   let source_type = ($config | get --optional source_type | default "scripts")
   let subdir = if $source_type == "crds" { "crds" } else { "scripts" }
 
-  let path = ($SOURCES_PATH | path join $config.path | path join $subdir)
+  let path = ($NUOP_SOURCES_PATH | path join $config.path | path join $subdir)
   mkdir $path
 
   let tmp_dir = mk_temp_dir

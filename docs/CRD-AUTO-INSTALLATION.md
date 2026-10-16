@@ -226,7 +226,7 @@ spec:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SOURCES_PATH` | `/sources` | Root of the unified sources tree |
+| `NUOP_SOURCES_PATH` | `/sources` | Root of the unified sources tree |
 | `NUOP_MODE` | `standard` | Operator mode (`standard`, `init`, or `managed`) |
 
 ### Custom Sources Path
@@ -235,7 +235,7 @@ Override the default `/sources` root if needed:
 
 ```yaml
 env:
-  - name: SOURCES_PATH
+  - name: NUOP_SOURCES_PATH
     value: /custom/sources
 ```
 
