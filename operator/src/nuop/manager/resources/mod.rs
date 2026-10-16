@@ -9,7 +9,9 @@ pub(crate) use deployment::create_or_patch_deployment;
 pub(crate) use deployment::generate_deployment;
 
 #[cfg(test)]
+#[path = "../../../../test/nuop/manager/resources/config_map.rs"]
 mod config_map_tests;
 
 #[cfg(test)]
+#[path = "../../../../test/nuop/manager/resources/deployment.rs"]
 mod deployment_tests;

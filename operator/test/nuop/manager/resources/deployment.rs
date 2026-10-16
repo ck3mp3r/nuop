@@ -1,5 +1,5 @@
 use crate::nuop::{
-    manager::model::{Credentials, Mapping, Source},
+    manager::model::{Credentials, Mapping, Source, SourceType},
     manager::resources::{
         create_or_patch_deployment,
         deployment::{DeploymentMeta, generate_volumes_and_mounts, has_drifted},
@@ -587,6 +587,7 @@ fn test_generate_deployment_with_sources_and_mappings() {
     let sources = vec![Source {
         location: "https://github.com/test/repo".to_string(),
         path: "test/path".to_string(),
+        source_type: SourceType::Scripts,
         credentials: Some(Credentials {
             token: Some(SecretKeySelector {
                 name: "test-secret".to_string(),
@@ -739,6 +740,7 @@ fn test_generate_volumes_and_mounts() {
         Source {
             location: "https://github.com/test/repo1".to_string(),
             path: "path/to/scripts".to_string(),
+            source_type: SourceType::Scripts,
             credentials: Some(Credentials {
                 token: Some(SecretKeySelector {
                     name: "secret1".to_string(),
@@ -752,6 +754,7 @@ fn test_generate_volumes_and_mounts() {
         Source {
             location: "https://github.com/test/repo2".to_string(),
             path: "another/path".to_string(),
+            source_type: SourceType::Scripts,
             credentials: None,
         },
     ];
@@ -769,28 +772,32 @@ fn test_generate_volumes_and_mounts() {
 
     let (volumes, mounts) = generate_volumes_and_mounts(deployment_name, &sources, &mappings);
 
-    // Should have: scripts, config-sources, config-mappings, and secret volumes
+    // Should have: sources, config-sources, config-mappings, and secret volumes
     assert_eq!(volumes.len(), 4);
     assert_eq!(mounts.len(), 4);
 
-    // Verify scripts volume
-    let scripts_volume = volumes.iter().find(|v| v.name == "scripts").unwrap();
-    assert!(scripts_volume.empty_dir.is_some());
+    // Verify sources volume
+    let sources_volume = volumes.iter().find(|v| v.name == "sources").unwrap();
+    assert!(sources_volume.empty_dir.is_some());
 
-    let scripts_mount = mounts.iter().find(|m| m.name == "scripts").unwrap();
-    assert_eq!(scripts_mount.mount_path, "/scripts");
+    let sources_mount = mounts.iter().find(|m| m.name == "sources").unwrap();
+    assert_eq!(sources_mount.mount_path, "/sources");
+
+    // Verify no legacy scripts volume or mount remains
+    assert!(volumes.iter().all(|v| v.name != "scripts"));
+    assert!(mounts.iter().all(|m| m.mount_path != "/scripts"));
 
     // Verify config-sources volume
-    let sources_volume = volumes.iter().find(|v| v.name == "config-sources").unwrap();
-    let config_map_source = sources_volume.config_map.as_ref().unwrap();
+    let config_sources_volume = volumes.iter().find(|v| v.name == "config-sources").unwrap();
+    let config_map_source = config_sources_volume.config_map.as_ref().unwrap();
     assert_eq!(
         config_map_source.name,
         format!("{deployment_name}-nuop-sources-config")
     );
     assert_eq!(config_map_source.default_mode.unwrap(), 420);
 
-    let sources_mount = mounts.iter().find(|m| m.name == "config-sources").unwrap();
-    assert_eq!(sources_mount.mount_path, "/config/sources");
+    let config_sources_mount = mounts.iter().find(|m| m.name == "config-sources").unwrap();
+    assert_eq!(config_sources_mount.mount_path, "/config/sources");
 
     // Verify config-mappings volume
     let mappings_volume = volumes
@@ -830,7 +837,7 @@ fn test_generate_volumes_and_mounts() {
     // Test with only sources, no mappings
     let (source_volumes, source_mounts) =
         generate_volumes_and_mounts(deployment_name, &sources, &[]);
-    assert_eq!(source_volumes.len(), 3); // scripts, config-sources, secret
+    assert_eq!(source_volumes.len(), 3); // sources, config-sources, secret
     assert_eq!(source_mounts.len(), 3);
 
     // Test with only mappings, no sources

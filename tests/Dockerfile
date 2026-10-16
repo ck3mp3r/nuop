@@ -2,8 +2,8 @@
 # Demonstrates automatic CRD installation feature
 #
 # This Dockerfile extends the base nuop image and adds:
-# - Custom CRD (GreetingRequest) in /crds directory
-# - Operator script in /scripts directory
+# - Custom CRD (GreetingRequest) in /sources/greeting-operator/crds
+# - Operator script in /sources/greeting-operator/scripts
 #
 # The CRD will be automatically installed when the container starts in Standard mode
 
@@ -15,17 +15,17 @@ USER root
 RUN rm -rf /scripts/*
 
 # Copy custom CRD - will be auto-installed on startup
-COPY ./crds/ /crds/
+COPY ./crds/ /sources/greeting-operator/crds/
 
-# Copy only our test operator script
-COPY ./scripts/ /scripts/
+# Copy only our test operator script (flattened into the operator's scripts dir)
+COPY ./scripts/greeting-operator/ /sources/greeting-operator/scripts/
 
 # Fix permissions
-RUN chown -R nushell:nushell /scripts /crds
+RUN chown -R nushell:nushell /sources
 
 USER nushell
-WORKDIR /scripts
+WORKDIR /sources
 
 # The entrypoint from base image will:
-# 1. Run install-crds (which installs CRDs from /crds)
-# 2. Start the operator (which loads scripts from /scripts)
+# 1. Run install-crds (which installs CRDs from /sources/**/crds/)
+# 2. Start the operator (which loads scripts from /sources)

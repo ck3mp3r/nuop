@@ -12,13 +12,15 @@ The **Greeting Operator** is a simple custom operator that:
 
 ### What It Tests
 
-- ✅ **Automatic CRD Installation**: CRDs are auto-installed from `/crds` directory
+- ✅ **Automatic CRD Installation**: CRDs are auto-installed from `/sources/**/crds/` directories
 - ✅ **Custom Resource Reconciliation**: Operator watches and reconciles custom resources
 - ✅ **Standard Mode Operation**: Operator runs in standard mode with script-based controller
 - ✅ **Status Updates**: Updates custom resource status with greeting information
 - ✅ **Finalizers**: Cleans up ConfigMaps when GreetingRequest is deleted
 
 ## Directory Structure
+
+Repository layout:
 
 ```
 tests/
@@ -32,6 +34,17 @@ tests/
 │   ├── greetingrequest.yaml               # Example custom resources
 │   └── deployment.yaml                    # Full deployment with RBAC
 └── README.md                              # This file
+```
+
+Container layout (the unified `/sources/` tree):
+
+```
+/sources/
+└── greeting-operator/
+    ├── scripts/
+    │   └── mod.nu                         # Loaded by the operator
+    └── crds/
+        └── greetingrequest-crd.yaml       # Auto-installed on startup
 ```
 
 ## Custom Resource Definition
@@ -67,7 +80,7 @@ Container starts → install-crds runs → CRDs installed → operator starts
 ```
 
 The `install-crds` script automatically:
-- Scans `/crds` directory for YAML files
+- Scans `/sources/**/crds/` directories for YAML files (`.yaml` and `.yml`)
 - Installs or updates each CRD
 - Waits for CRDs to be established
 - Then allows operator to start
@@ -236,8 +249,11 @@ You should see:
 ```
 🔍 Checking for CRDs to install...
 📦 Found 1 CRD file(s) to process
-📄 Processing: /crds/greetingrequest-crd.yaml
-✅ CRD greetingrequests.demo.nuop.io installed successfully
+📄 Processing: /sources/greeting-operator/crds/greetingrequest-crd.yaml
+➕ Installing new CRD: greetingrequests.demo.nuop.io
+✅ CRD greetingrequests.demo.nuop.io applied successfully
+⏳ Waiting for CRD greetingrequests.demo.nuop.io to be established...
+✅ CRD greetingrequests.demo.nuop.io is ready
 ```
 
 ### Permission Errors
@@ -271,26 +287,26 @@ You can use this test as a template for your own operators:
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│   Greeting Operator Container       │
-│                                     │
-│  ┌──────────────────────────────┐  │
-│  │  /crds/                      │  │
-│  │    greetingrequest-crd.yaml │  │  Auto-installed
-│  └──────────────────────────────┘  │  on startup
-│                                     │
-│  ┌──────────────────────────────┐  │
-│  │  /scripts/greeting-operator/ │  │
-│  │    mod.nu                    │  │  Loaded by
-│  └──────────────────────────────┘  │  operator
-│                                     │
-│  ┌──────────────────────────────┐  │
-│  │  Operator (Rust binary)      │  │
-│  │  - Watches GreetingRequests  │  │
-│  │  - Runs Nushell script       │  │
-│  │  - Updates status            │  │
-│  └──────────────────────────────┘  │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│   Greeting Operator Container               │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │  /sources/greeting-operator/crds/     │  │  Auto-installed
+│  │    greetingrequest-crd.yaml           │  │  on startup
+│  └───────────────────────────────────────┘  │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │  /sources/greeting-operator/scripts/  │  │  Loaded by
+│  │    mod.nu                             │  │  operator
+│  └───────────────────────────────────────┘  │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │  Operator (Rust binary)               │  │
+│  │  - Watches GreetingRequests           │  │
+│  │  - Runs Nushell script                │  │
+│  │  - Updates status                     │  │
+│  └───────────────────────────────────────┘  │
+└─────────────────────────────────────────────┘
            │
            ├─────────► Kubernetes API
            │           - GreetingRequests

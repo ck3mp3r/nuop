@@ -1,23 +1,23 @@
 #!/usr/bin/env nu
 
-# Script to automatically install CRDs from /crds directory
-# Runs at container startup for Standard mode
+# Script to automatically install CRDs from /sources/**/crds/ directories
+# Runs at container startup for Standard mode and after init-sources in Managed mode
 
 print "🔍 Checking for CRDs to install..."
 
-let CRDS_PATH = ($env | get --optional CRDS_PATH | default "/crds")
+let SOURCES_PATH = ($env | get --optional SOURCES_PATH | default "/sources")
 
-# Check if CRDs directory exists
-if not ($CRDS_PATH | path exists) {
-  print "ℹ️  No /crds directory found - skipping CRD installation"
+# Check if sources directory exists
+if not ($SOURCES_PATH | path exists) {
+  print $"ℹ️  No ($SOURCES_PATH) directory found - skipping CRD installation"
   exit 0
 }
 
-# Find all YAML files in the CRDs directory
-let crd_files = (glob $"($CRDS_PATH)/**/*.yaml")
+# Find all YAML files under any crds/ directory
+let crd_files = (glob $"($SOURCES_PATH)/**/crds/**/*.{yaml,yml}")
 
 if ($crd_files | is-empty) {
-  print $"ℹ️  No CRD files found in ($CRDS_PATH)"
+  print $"ℹ️  No CRD files found under ($SOURCES_PATH)/**/crds/"
   exit 0
 }
 
@@ -29,65 +29,48 @@ def crd-exists [crd_name: string] {
   $result.exit_code == 0
 }
 
-# Function to install or update a CRD
-def install-crd [file_path: string] {
-  print $"📄 Processing: ($file_path)"
-
-  # Read and parse the CRD file
-  let crd_content = try {
-    open $file_path
-  } catch {
-    print $"❌ Error: Could not read ($file_path)"
-    return false
-  }
-
-  # Extract CRD name from the file
-  let crd_name = try {
-    $crd_content | get metadata.name
-  } catch {
-    print $"❌ Error: Invalid CRD format in ($file_path)"
-    return false
-  }
-
+# Function to apply a single CRD document and wait for it to be established
+def apply-crd [crd_name: string, doc: record] {
   # Check if CRD already exists
   if (crd-exists $crd_name) {
     print $"✅ CRD ($crd_name) already exists - updating..."
-
-    # Apply the CRD (idempotent - will update if different)
-    let result = (kubectl apply -f $file_path | complete)
-
-    if $result.exit_code == 0 {
-      print $"✅ CRD ($crd_name) updated successfully"
-      return true
-    } else {
-      print $"❌ Error updating CRD ($crd_name): ($result.stderr)"
-      return false
-    }
   } else {
     print $"➕ Installing new CRD: ($crd_name)"
+  }
 
-    # Create the CRD
-    let result = (kubectl apply -f $file_path | complete)
+  # Apply the CRD (idempotent - will update if different)
+  let result = ($doc | to yaml | kubectl apply -f - | complete)
 
-    if $result.exit_code == 0 {
-      print $"✅ CRD ($crd_name) installed successfully"
+  if $result.exit_code != 0 {
+    print $"❌ Error applying CRD ($crd_name): ($result.stderr)"
+    return false
+  }
 
-      # Wait for CRD to be established (ready to use)
-      print $"⏳ Waiting for CRD ($crd_name) to be established..."
+  print $"✅ CRD ($crd_name) applied successfully"
 
-      let wait_result = (kubectl wait --for condition=established --timeout=60s $"crd/($crd_name)" | complete)
+  # Wait for CRD to be established (ready to use) - for both new and updated CRDs
+  print $"⏳ Waiting for CRD ($crd_name) to be established..."
 
-      if $wait_result.exit_code == 0 {
-        print $"✅ CRD ($crd_name) is ready"
-        return true
-      } else {
-        print $"⚠️  Warning: CRD ($crd_name) may not be fully ready"
-        return true # Don't fail - it might work anyway
-      }
-    } else {
-      print $"❌ Error installing CRD ($crd_name): ($result.stderr)"
-      return false
-    }
+  let wait_result = (kubectl wait --for condition=established --timeout=60s $"crd/($crd_name)" | complete)
+
+  if $wait_result.exit_code == 0 {
+    print $"✅ CRD ($crd_name) is ready"
+    return true
+  } else {
+    print $"⚠️  Warning: CRD ($crd_name) may not be fully ready"
+    return true # Don't fail - it might work anyway
+  }
+}
+
+# Function to normalize parsed YAML into a list of document records
+def to-docs [parsed] {
+  let kind = ($parsed | describe)
+  if ($kind | str starts-with "record") {
+    [$parsed]
+  } else if ($kind | str starts-with "table") or ($kind | str starts-with "list") {
+    $parsed | where {|doc| ($doc | describe) | str starts-with "record" }
+  } else {
+    []
   }
 }
 
@@ -96,10 +79,42 @@ mut success_count = 0
 mut error_count = 0
 
 for file in $crd_files {
-  if (install-crd $file) {
-    $success_count = $success_count + 1
-  } else {
+  print $"📄 Processing: ($file)"
+
+  # Read and parse the file (multi-document YAML yields a list of documents)
+  let parsed = (try {
+    open $file
+  } catch {
+    print $"❌ Error: Could not read ($file)"
+    null
+  })
+
+  if $parsed == null {
     $error_count = $error_count + 1
+    continue
+  }
+
+  for doc in (to-docs $parsed) {
+    let kind = ($doc | get --optional kind)
+
+    # Only apply CustomResourceDefinition documents
+    if $kind != "CustomResourceDefinition" {
+      print $"⚠️  Skipping document in ($file): kind is ($kind | default 'missing'), not CustomResourceDefinition"
+      continue
+    }
+
+    let crd_name = ($doc | get --optional metadata.name)
+
+    if $crd_name == null {
+      print $"⚠️  Skipping CRD document in ($file): missing metadata.name"
+      continue
+    }
+
+    if (apply-crd $crd_name $doc) {
+      $success_count = $success_count + 1
+    } else {
+      $error_count = $error_count + 1
+    }
   }
 }
 

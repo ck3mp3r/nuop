@@ -63,15 +63,43 @@ spec:
 
 ### `spec.sources` (array, required)
 
-Defines where to fetch Nushell scripts from. Each source represents a location containing operator scripts.
+Defines where to fetch operator content from. Each source represents a location containing either operator scripts or CRD manifests.
 
 #### Source Object
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `location` | string | Yes | URL or path to fetch scripts from |
-| `path` | string | Yes | Mount path for the source within container |
+| `location` | string | Yes | URL or path to fetch content from |
+| `path` | string | Yes | Operator identity; content is fetched to `/sources/<path>/<scripts|crds>/` |
+| `source_type` | string | No | `scripts` (default) or `crds` |
 | `credentials` | object | No | Authentication credentials |
+
+#### `source_type` (string, optional)
+
+Selects what the source provides and where `init-sources` fetches it:
+
+| Value | Destination | Description |
+|-------|-------------|-------------|
+| `scripts` | `/sources/<path>/scripts/` | Nushell operator scripts (`mod.nu`). Default when omitted. |
+| `crds` | `/sources/<path>/crds/` | CRD manifests, auto-installed by `install-crds` before the operator starts. |
+
+Sources that share the same `path` merge into the same operator directory. A common pattern is one `scripts` source and one `crds` source with the same `path` — the scripts come from the Nushell operator's repo and the CRDs come from the original operator's repo.
+
+```yaml
+spec:
+  sources:
+    # Nushell operator scripts — required
+    - location: https://github.com/myorg/nushell-kafka-mimic.git?ref=main&dir=operators/kafka
+      path: kafka
+      source_type: scripts
+
+    # CRDs from the original operator's repo — optional
+    - location: https://github.com/strimzi/strimzi-kafka-operator.git?ref=main&dir=install/cluster-operator/src/main/resources
+      path: kafka
+      source_type: crds
+```
+
+Both entries use `path: kafka`, so the scripts land in `/sources/kafka/scripts/` and the CRDs in `/sources/kafka/crds/`.
 
 #### Supported Location Formats
 

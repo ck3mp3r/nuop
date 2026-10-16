@@ -2,7 +2,7 @@
 
 print "Running init script..."
 
-let SCRIPTS_PATH = $env | get --optional "SCRIPTS_PATH" | default "/scripts"
+let SOURCES_PATH = $env | get --optional "SOURCES_PATH" | default "/sources"
 let SECRETS_PATH = $env | get --optional "SECRETS_PATH" | default "/secrets"
 let CONFIG_PATH = $env | get --optional "CONFIG_PATH" | default "/config"
 
@@ -17,7 +17,10 @@ def fetch_source [config] {
 
   let location = $config.location
 
-  let path = ($SCRIPTS_PATH | path join $config.path)
+  let source_type = ($config | get --optional source_type | default "scripts")
+  let subdir = if $source_type == "crds" { "crds" } else { "scripts" }
+
+  let path = ($SOURCES_PATH | path join $config.path | path join $subdir)
   mkdir $path
 
   let tmp_dir = mk_temp_dir
@@ -73,17 +76,19 @@ def fetch_source [config] {
     cp -r $entry $path
   }
 
-  # Validate that script directories contain mod.nu files
-  try {
-    let script_dirs = (glob $"($path)/*" | where {|p| ($p | path type) == "dir" })
-    $script_dirs | each {|dir|
-      let mod_nu = ($dir | path join "mod.nu")
-      if not ($mod_nu | path exists) {
-        print $"Warning: Script directory ($dir) does not contain mod.nu"
+  # Validate that script directories contain mod.nu files (scripts sources only)
+  if $source_type != "crds" {
+    try {
+      let script_dirs = (glob $"($path)/*" | where {|p| ($p | path type) == "dir" })
+      $script_dirs | each {|dir|
+        let mod_nu = ($dir | path join "mod.nu")
+        if not ($mod_nu | path exists) {
+          print $"Warning: Script directory ($dir) does not contain mod.nu"
+        }
       }
+    } catch {
+      print $"Warning: Could not validate script directories in ($path)"
     }
-  } catch {
-    print $"Warning: Could not validate script directories in ($path)"
   }
 }
 

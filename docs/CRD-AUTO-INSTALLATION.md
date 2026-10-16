@@ -1,15 +1,15 @@
 # Automatic CRD Installation
 
-The Nushell Operator supports automatic installation of Custom Resource Definitions (CRDs) when starting in **Standard mode**. This feature simplifies deployment of operators that manage custom resources.
+The Nushell Operator supports automatic installation of Custom Resource Definitions (CRDs) in both **Standard mode** and **Manager/Managed mode**. This feature simplifies deployment of operators that manage custom resources.
 
 ## Overview
 
-When the operator starts in Standard mode, it automatically:
+When the operator starts, it automatically:
 
-1. Checks for a `/crds` directory in the container
-2. Discovers all `*.yaml` files in the directory
+1. Discovers CRD manifests in every `crds/` directory under `/sources/` (both `.yaml` and `.yml`)
+2. Validates that each document has `kind: CustomResourceDefinition`
 3. Installs or updates each CRD
-4. Waits for CRDs to be established before starting controllers
+4. Waits for each CRD to be `established` before starting controllers
 
 This ensures your custom resources are ready before your operator scripts begin reconciliation.
 
@@ -17,29 +17,39 @@ This ensures your custom resources are ready before your operator scripts begin 
 
 ### Directory Structure
 
-Place your CRD definitions in the `/crds` directory of your operator container:
+All operator content lives in a single `/sources/` tree, one directory per operator:
 
 ```
-/
-├── bin/
-│   ├── operator
-│   ├── entrypoint
-│   └── install-crds
-├── scripts/
-│   └── my-operator/
-│       └── mod.nu
-└── crds/                          # CRDs auto-installed from here
-    ├── myresource-crd.yaml
-    └── another-crd.yaml
+/sources/
+└── <op-name>/
+    ├── scripts/                  # Operator scripts, discovered by find_scripts
+    │   └── mod.nu
+    └── crds/                     # CRDs auto-installed from here
+        ├── myresource-crd.yaml
+        └── another-crd.yml
 ```
+
+- `scripts/` holds the operator's `mod.nu`. `find_scripts` discovers `mod.nu` recursively anywhere under `/sources/`.
+- `crds/` holds CRD manifests. `install-crds` scans every `crds/` directory under `/sources/` for `.yaml` and `.yml` files.
+
+The `<op-name>` segment is the operator identity (for example `kafka` or `greeting-operator`). It is arbitrary — both scans are recursive.
 
 ### Startup Sequence
 
+**Standard mode** — CRDs are baked into the image:
+
 1. **Container starts** with `NUOP_MODE=standard` (default)
-2. **`install-crds` runs** before the operator starts
+2. **`install-crds` runs** before the operator starts, if any `crds/` directory under `/sources/` contains YAML files
 3. **CRDs are installed/updated** using `kubectl apply`
-4. **CRDs are validated** to ensure they're established
+4. **Each CRD is waited on** until `condition=established`
 5. **Operator starts** and begins watching resources
+
+**Manager/Managed mode** — CRDs are fetched from a source:
+
+1. **Init container starts** with `NUOP_MODE=init`
+2. **`init-sources` fetches** each `spec.sources` entry into `/sources/<path>/scripts/` or `/sources/<path>/crds/`, according to its `source_type`
+3. **`install-crds` runs** in the init container if any CRDs were fetched
+4. **Main container starts** the operator, which loads scripts from `/sources/`
 
 ## Usage
 
@@ -105,11 +115,11 @@ spec:
 ```dockerfile
 FROM ghcr.io/ck3mp3r/nuop:latest
 
-# Copy operator scripts
-COPY scripts/ /scripts/
+# Copy operator scripts into the unified sources tree
+COPY scripts/ /sources/my-operator/scripts/
 
 # Copy CRD definitions
-COPY crds/ /crds/
+COPY crds/ /sources/my-operator/crds/
 
 # CRDs will be automatically installed on startup
 ```
@@ -120,6 +130,48 @@ COPY crds/ /crds/
 docker build -t your-registry/my-operator:v1.0.0 .
 docker push your-registry/my-operator:v1.0.0
 ```
+
+### Manager/Managed Mode: Sourcing CRDs from a Git Repository
+
+In Manager/Managed mode there is no Dockerfile to bake CRDs into. Instead, declare a second source with `source_type: crds` on the `NuOperator` CR. The manager's init container fetches it into `/sources/<path>/crds/`, and `install-crds` installs it before the operator starts.
+
+```yaml
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: lightweight-kafka-operator
+  namespace: operators
+spec:
+  image: ghcr.io/ck3mp3r/nuop:latest
+  serviceAccountName: kafka-mimic-operator
+
+  sources:
+    # Nushell operator scripts (the lightweight mimic) — required
+    - location: https://github.com/myorg/nushell-kafka-mimic.git?ref=main&dir=operators/kafka
+      path: kafka
+      source_type: scripts
+
+    # CRDs from the original operator's repo — optional
+    - location: https://github.com/strimzi/strimzi-kafka-operator.git?ref=main&dir=install/cluster-operator/src/main/resources
+      path: kafka
+      source_type: crds
+
+  mappings:
+    - name: kafka-controller
+      kind: Kafka
+      version: v1beta2
+      group: kafka.strimzi.io
+      requeue_after_noop: 300
+      requeue_after_change: 30
+
+  env:
+    - name: LOG_LEVEL
+      value: info
+```
+
+Both sources share `path: kafka`, so the scripts land in `/sources/kafka/scripts/` and the CRDs in `/sources/kafka/crds/`. The `source_type` field defaults to `scripts` when omitted.
+
+The managed instance's ServiceAccount (named by `spec.serviceAccountName`) must carry the CRD permissions shown in [Deploying Your Operator](#deploying-your-operator).
 
 ### Deploying Your Operator
 
@@ -174,17 +226,17 @@ spec:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CRDS_PATH` | `/crds` | Directory containing CRD YAML files |
-| `NUOP_MODE` | `standard` | Operator mode (must be `standard` for auto-install) |
+| `SOURCES_PATH` | `/sources` | Root of the unified sources tree |
+| `NUOP_MODE` | `standard` | Operator mode (`standard`, `init`, or `managed`) |
 
-### Custom CRD Path
+### Custom Sources Path
 
-Override the default `/crds` path if needed:
+Override the default `/sources` root if needed:
 
 ```yaml
 env:
-  - name: CRDS_PATH
-    value: /custom/path/to/crds
+  - name: SOURCES_PATH
+    value: /custom/sources
 ```
 
 ## Features
@@ -197,15 +249,17 @@ env:
 
 ### Validation
 
-- Validates CRD YAML format before applying
-- Waits for CRDs to be "established" (ready to use)
-- Provides clear error messages for invalid CRDs
+- Checks that each YAML document has `kind: CustomResourceDefinition` before applying; documents with any other kind are skipped with a warning
+- Handles multi-document YAML files — every `CustomResourceDefinition` document in the file is applied
+- Discovers both `.yaml` and `.yml` files
+- Waits for each CRD to be `established` (ready to use) after applying, for both new and updated CRDs
+- Provides clear error messages for unreadable or invalid CRDs
 
 ### Multiple CRDs
 
 - Supports any number of CRD files
-- Processes all `*.yaml` files in `/crds` directory
-- Can organize CRDs in subdirectories: `/crds/**/*.yaml`
+- Processes every `.yaml` and `.yml` file under any `crds/` directory in the sources tree
+- Can organize CRDs in subdirectories
 
 ### Error Handling
 
@@ -220,14 +274,16 @@ env:
 ```
 🔍 Checking for CRDs to install...
 📦 Found 2 CRD file(s) to process
-📄 Processing: /crds/myresource-crd.yaml
+📄 Processing: /sources/my-operator/crds/myresource-crd.yaml
 ➕ Installing new CRD: myresources.example.com
-✅ CRD myresources.example.com installed successfully
+✅ CRD myresources.example.com applied successfully
 ⏳ Waiting for CRD myresources.example.com to be established...
 ✅ CRD myresources.example.com is ready
-📄 Processing: /crds/another-crd.yaml
+📄 Processing: /sources/my-operator/crds/another-crd.yml
 ✅ CRD anotherresources.example.com already exists - updating...
-✅ CRD anotherresources.example.com updated successfully
+✅ CRD anotherresources.example.com applied successfully
+⏳ Waiting for CRD anotherresources.example.com to be established...
+✅ CRD anotherresources.example.com is ready
 
 📊 CRD Installation Summary:
    ✅ Successful: 2
@@ -239,7 +295,16 @@ env:
 
 ```
 🔍 Checking for CRDs to install...
-ℹ️  No /crds directory found - skipping CRD installation
+ℹ️  No CRD files found under /sources/**/crds/
+```
+
+### Skipped Document
+
+A document whose `kind` is not `CustomResourceDefinition` is skipped:
+
+```
+📄 Processing: /sources/my-operator/crds/mixed.yaml
+⚠️  Skipping document in /sources/my-operator/crds/mixed.yaml: kind is ConfigMap, not CustomResourceDefinition
 ```
 
 ### Installation Error
@@ -247,8 +312,8 @@ env:
 ```
 🔍 Checking for CRDs to install...
 📦 Found 1 CRD file(s) to process
-📄 Processing: /crds/invalid-crd.yaml
-❌ Error: Invalid CRD format in /crds/invalid-crd.yaml
+📄 Processing: /sources/my-operator/crds/invalid-crd.yaml
+❌ Error: Could not read /sources/my-operator/crds/invalid-crd.yaml
 
 📊 CRD Installation Summary:
    ✅ Successful: 0
@@ -319,19 +384,15 @@ Follow Kubernetes CRD naming conventions:
 
 ## Limitations
 
-### Standard Mode Only
+### CRD Permissions Required
 
-Automatic CRD installation only works in **Standard mode**:
+Automatic CRD installation works in both Standard mode and Manager/Managed mode, but the operator's ServiceAccount must be granted CRD permissions:
 
-- ✅ Standard mode: CRDs auto-installed
-- ❌ Manager mode: CRDs must be installed separately
-- ❌ Managed mode: CRDs must be installed separately
+- ✅ Standard mode: CRDs baked into the image are auto-installed
+- ✅ Manager/Managed mode: CRDs declared with `source_type: crds` are auto-installed
+- ❌ Without CRD permissions: installation fails and the container exits non-zero
 
-For Manager and Managed modes, install CRDs manually:
-
-```bash
-kubectl apply -f crds/
-```
+For Manager/Managed mode, the ServiceAccount named by `spec.serviceAccountName` must carry the CRD rule. The Helm chart gates that rule behind `rbac.crdAutoInstall` (default `false`).
 
 ### Core Resources
 
@@ -348,12 +409,13 @@ The operator ServiceAccount needs CRD management permissions. If your cluster ha
 
 ### "Command `install-crds` not found"
 
-Ensure the `install-crds` script is in `/bin/` and executable:
+Ensure the `install-crds` script is in `/bin/`:
 
 ```dockerfile
 COPY ./docker/install-crds /bin/
-RUN chmod +x /bin/install-crds
 ```
+
+The script ships with the executable bit set, so no `chmod` is required.
 
 ### "Permission denied" for CRD creation
 

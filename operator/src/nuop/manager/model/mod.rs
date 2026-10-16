@@ -10,3 +10,9 @@ pub use source::Source;
 pub use nu_operator::NuOperatorSpec;
 #[cfg(test)]
 pub use source::Credentials;
+#[cfg(test)]
+pub use source::SourceType;
+
+#[cfg(test)]
+#[path = "../../../../test/nuop/manager/model/source.rs"]
+mod source_tests;

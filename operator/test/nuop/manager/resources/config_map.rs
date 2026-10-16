@@ -9,7 +9,7 @@ use kube::{Client, client::Body};
 use tokio::sync::Mutex;
 use tower_test::mock::pair;
 
-use crate::nuop::manager::model::{Credentials, Mapping, Source};
+use crate::nuop::manager::model::{Credentials, Mapping, Source, SourceType};
 use crate::nuop::manager::resources::{
     create_or_patch_config_map, field_manager, generate_source_configmap,
 };
@@ -65,6 +65,7 @@ fn test_generate_configmaps() {
     let sources = vec![Source {
         location: "https://github.com/example/repo.git".to_string(),
         path: "test/source".to_string(),
+        source_type: SourceType::Scripts,
         credentials: Some(Credentials {
             token: Some(SecretKeySelector {
                 name: "github-token".to_string(),

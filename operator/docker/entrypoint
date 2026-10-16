@@ -2,13 +2,23 @@
 
 # Get NUOP_MODE, defaulting to "standard"
 let mode = ($env | get --optional NUOP_MODE | default "standard")
+let sources_path = ($env | get --optional SOURCES_PATH | default "/sources")
 
 if $mode == "init" {
   init-sources
+
+  # Install CRDs fetched by init-sources (if any)
+  let crd_files = (glob $"($sources_path)/**/crds/**/*.{yaml,yml}")
+  if not ($crd_files | is-empty) {
+    install-crds
+  }
 } else {
   # Install CRDs before starting operator (Standard mode only)
   if $mode == "standard" {
-    install-crds
+    let crd_files = (glob $"($sources_path)/**/crds/**/*.{yaml,yml}")
+    if not ($crd_files | is-empty) {
+      install-crds
+    }
   }
 
   operator
