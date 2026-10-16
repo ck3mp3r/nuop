@@ -7,16 +7,55 @@ windows:
   - name: code
     panes:
       - name: Editor
-        flex: 5
+        flex: 2
         commands:
           - command: ^$env.EDITOR
-      - name: Opencode
-        flex: 3
-        commands:
-          - command: ^opencode
-            args:
-              - --port
 
+      - name: Harness
+        flex: 1
+        commands:
+          - command: ^agent
+            args:
+              - a2a
+              - --agent
+              - orchestrator
+
+  - name: agents
+    flex_direction: row
+    panes:
+      - flex: 1
+        commands:
+          - command: ^agent
+            args:
+              - a2a
+              - --agent
+              - reviewer
+              - --name
+              - jack
+              - --store
+              - jsonl
+      - flex: 1
+        commands:
+          - command: ^agent
+            args:
+              - a2a
+              - --agent
+              - researcher
+              - --name
+              - lucy
+              - --store
+              - jsonl
+      - flex: 1
+        commands:
+          - command: ^agent
+            args:
+              - a2a
+              - --agent
+              - developer
+              - --name
+              - bob
+              - --store
+              - jsonl
   - name: misc
     flex_direction: row
     panes:
