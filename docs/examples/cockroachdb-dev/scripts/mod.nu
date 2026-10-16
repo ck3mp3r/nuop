@@ -401,7 +401,7 @@ def patch-cluster-ready [name: string, namespace: string, ready: bool] {
       {
         type: "ClusterReady"
         status: $value
-        lastTransitionTime: (date now | format date "%Y-%m-%dT%H:%M:%SZ")
+        lastTransitionTime: (date now | date to-timezone UTC | format date "%Y-%m-%dT%H:%M:%SZ")
       }
     ]
   }

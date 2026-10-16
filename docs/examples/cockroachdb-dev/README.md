@@ -127,7 +127,7 @@ In containers, scripts are at `/sources/<op-name>/scripts/mod.nu`.
 apiVersion: crdb.cockroachlabs.com/v1beta1
 kind: CrdbCluster
 metadata:
-  name: crdb-no-topo
+  name: crdb-dev
   namespace: default
 spec:
   tlsEnabled: false
@@ -144,23 +144,23 @@ spec:
             accessModes: [ReadWriteOnce]
             resources:
               requests:
-                storage: 60Gi
+                storage: 1Gi
             volumeMode: Filesystem
 ```
 
 Apply the resource and check the result:
 
 ```bash
-kubectl apply -f crdb-no-topo.yaml
-kubectl get statefulset crdb-no-topo
-kubectl get service crdb-no-topo crdb-no-topo-public
-kubectl get crdbcluster crdb-no-topo -o jsonpath='{.status}'
+kubectl apply -f crdb-cluster.yaml
+kubectl get statefulset crdb-dev
+kubectl get service crdb-dev crdb-dev-public
+kubectl get crdbcluster crdb-dev -o jsonpath='{.status}'
 ```
 
 Connect to the cluster:
 
 ```bash
-kubectl exec -it crdb-no-topo-0 -- /cockroach/cockroach sql --insecure
+kubectl exec -it crdb-dev-0 -- /cockroach/cockroach sql --insecure
 ```
 
 ## Limitations

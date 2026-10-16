@@ -121,7 +121,7 @@ def update-status [resource: record configmap_name: string greeting: string stat
     status: {
       greeting: $greeting
       configMapName: $configmap_name
-      lastUpdated: (date now | format date "%Y-%m-%dT%H:%M:%SZ")
+      lastUpdated: (date now | date to-timezone UTC | format date "%Y-%m-%dT%H:%M:%SZ")
       state: $state
       message: $"Greeting ConfigMap '($configmap_name)' is ($state | str downcase)"
     }
