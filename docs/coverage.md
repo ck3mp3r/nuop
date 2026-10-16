@@ -86,7 +86,7 @@ Cobertura XML, for CI systems that expect that format.
 
 ## Coverage profile
 
-The crate defines a `coverage` profile in `operator/.cargo/config.toml`:
+The crate defines a `coverage` profile in `operator/Cargo.toml`:
 
 ```toml
 [profile.coverage]

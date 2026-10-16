@@ -103,7 +103,7 @@ cargo nextest run --profile ci --manifest-path operator/Cargo.toml   # CI run, J
 
 In the Nix dev shell these are wrapped as `op-tests` (default profile) and `op-tests-ci` (CI profile, JUnit output).
 
-The pre-push hook runs the full suite: `cargo clippy --manifest-path operator/Cargo.toml -- -D warnings` lints all test code, then `cargo nextest run --profile ci --manifest-path operator/Cargo.toml` runs everything and writes `junit.xml`.
+The pre-push hook runs the full suite: `cargo clippy --manifest-path operator/Cargo.toml --tests -- -D warnings` lints all test code, then `cargo nextest run --profile ci --manifest-path operator/Cargo.toml` runs everything and writes `junit.xml`.
 
 Integration test modules:
 
