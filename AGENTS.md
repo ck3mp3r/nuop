@@ -112,7 +112,7 @@ The pre-push hook runs the full suite: `cargo clippy --manifest-path operator/Ca
 
 ### Test Through the Public Boundary
 
-- Tests verify behavior through the actual public API (e.g., `BuiltinTool::execute()` for tool handlers), not through internal types or methods exposed solely for testing
+- Tests verify behavior through the actual public API (e.g., `reconcile()` for the reconciler or `CommandExecutor::execute()` for script execution), not through internal types or methods exposed solely for testing
 - No private helper functions made public just for tests — shared logic is a private implementation detail, tested indirectly through observable output
 - If a test needs to inspect internal state, the test is testing implementation details — rewrite it to assert outcomes through the public API, not add a backdoor
 - `pub(crate)` on a field or method just so tests can peek at internal state is the same code smell as `#[cfg(test)]` accessors
@@ -157,17 +157,17 @@ in the scope, flag it for the orchestrator — do not do it inline.
 **Every external dependency MUST be injected via a trait so unit tests can substitute a mock.** This is not a suggestion — it is a hard requirement derived from the SOLID Dependency Inversion Principle.
 
 - ❌ NO: A constructor or method that hardcodes a concrete function performing I/O (e.g., a constructor that opens a file or builds an HTTP client directly)
-- ✅ YES: Define a trait (`RuntimeBuilder`, `SessionUpdateSink`, `PermissionRequestSink`) and store it on the struct. Production uses the real impl; tests use a mock impl.
-- ❌ NO: A unit test that constructs a real `reqwest::Client`, performs TLS init, opens a database, or probes a keychain
+- ✅ YES: Define a trait (`CommandExecutor`) and store it on the struct. Production uses the real impl (`ProcessExecutor`); tests use a mock impl.
+- ❌ NO: A unit test that constructs a real `kube::Client` against a live cluster, performs TLS init, or shells out to the `nu` interpreter
 - ✅ YES: Inject a mock that returns a pre-built value. The mock lives in the test file, not in production code.
 - ❌ NO: `pub(crate)` fields or `#[cfg(test)]` accessors to expose internal state for tests
 - ✅ YES: Design the public API so tests use the same methods as production code. If the API doesn't expose enough to verify a behavior, the API is missing a method.
 
-**The DI boundary is where the trait object lives.** `Arc<dyn RuntimeBuilder>` on `AcpSessionManager` is the same exception as `dyn EngineInterfaceLike` on `AgentRuntime` — it is the crate boundary, not internal code.
+**The DI boundary is where the trait object lives.** nuop uses static dispatch — `State<E: CommandExecutor>` is generic over the executor, so no trait object is needed. If a crate boundary ever requires dynamic dispatch, that boundary is the only place it is allowed.
 
 ### What counts as production code
 
-Any `.rs` file that is NOT in the `test/` directory is production code. This includes `mod.rs`, `input.rs`, `lifecycle.rs`, `dispatch.rs`, etc. The `#[cfg(test)]` attribute on `fn` in these files is the violation.
+Any `.rs` file that is NOT in the `test/` directory is production code. This includes `mod.rs`, `controller.rs`, `state.rs`, `reconciler.rs`, `config.rs`, etc. The `#[cfg(test)]` attribute on `fn` in these files is the violation.
 
 ### Mocking
 
@@ -175,11 +175,11 @@ Any `.rs` file that is NOT in the `test/` directory is production code. This inc
 
 **Mocking is mandatory, not optional.** See "Dependency Injection for Testability" above for the hard requirement.
 
-- Mock external dependencies (LLM APIs, file system, network, HTTP clients, keychain, databases)
-- Mock Nushell's `EngineInterface` when testing commands
+- Mock external dependencies (the Kubernetes API, file system, network, HTTP clients, databases)
+- Mock the Kubernetes API with `tower_test::mock::pair` when testing the operator's API calls
 - Use dependency injection to make code testable — every external dependency gets a trait
 - Trait-based abstractions for mockable interfaces — the mock lives in the test file, not in production code
-- A unit test that constructs a real HTTP client, opens a real database, or probes a real keychain is an integration test in disguise — fix the DI, do not gate the test
+- A unit test that constructs a real `kube::Client` against a live cluster, opens a real database, or shells out to the `nu` interpreter is an integration test in disguise — fix the DI, do not gate the test
 
 ### Code Coverage
 
@@ -358,7 +358,7 @@ the dead code.
 
 - ❌ NO: `Box<dyn Trait>`, `&dyn Trait`, trait objects in internal code
 - ✅ YES: Generics with trait bounds `T: Trait`
-- ✅ EXCEPTION: nu-plugin API boundary, rig's `ModelHandle`/`ConversationMemory`, and crate-level DI boundaries (`dyn EngineInterfaceLike`, `dyn RuntimeBuilder`) can use dynamic dispatch (required by the framework or for testability)
+- ✅ EXCEPTION: crate-level DI boundaries can use dynamic dispatch (required for testability)
 - Follow SOLID principles throughout:
   - **S**ingle Responsibility: One reason to change
   - **O**pen/Closed: Open for extension, closed for modification
@@ -368,16 +368,6 @@ the dead code.
 
 **DIP is a testability requirement, not just an architecture diagram concern.** If a constructor hardcodes a concrete function that performs I/O (HTTP client construction, TLS init, keychain access, database opening), unit tests cannot substitute a mock. The test either becomes an integration test (slow, fragile) or the production code gets `#[cfg(test)]` backdoors (banned). The correct response is: define a trait, inject it, and let tests provide a mock impl. See "Dependency Injection for Testability" above.
 
-### Event/Channel Design (rust10x 3-level architecture)
-
-When designing event/channel systems, follow the 3-level pattern:
-
-- **Level 1** (Event Base): Channel backend normalization — `MpscTx<M>`/`MpscRx<M>`, etc. Backend-agnostic facade with application-owned errors.
-- **Level 2** (Use-Case Aliases): Type aliases over Level 1 for specific use cases — `type TuiTx = MpscTx<TuiEvent>`. Topology choice lives in one place.
-- **Level 3** (Domain Types): Domain-specific endpoint types with domain operations — `AiJobTx::exec_request()` instead of raw `.send()`. Owns error translation from Level 1.
-
-Domain types should not leak Level 1 error types. Translate at the boundary.
-
 ### Trait Design
 
 Every required trait method must be callable by at least one production code
@@ -386,18 +376,19 @@ wrong — make it optional (provide a default implementation) or redesign the
 interface.
 
 ```rust
-// ❌ WRONG — choose() is required but never called in production
-pub trait AskApprovalHook {
-    fn choose(&mut self, ...) -> AskChoice;           // required, never called
-    fn choose_with_sink(&mut self, ...) -> AskChoice { // optional, always called
-        self.choose(...)
+// ❌ WRONG — run() is required but never called in production
+pub trait Executor {
+    fn run(&mut self, ...) -> Output;              // required, never called
+    fn run_with_context(&mut self, ...) -> Output { // optional, always called
+        self.run(...)
     }
 }
 
 // ✅ CORRECT — single method, covers all call sites
-pub trait AskApprovalHook {
-    fn choose<S: Sink>(&mut self, ..., sink: Option<&mut S>) -> AskChoice;
+pub trait Executor {
+    fn run(&mut self, ..., context: Option<&Context>) -> Output;
 }
+```
 
 ### No Delegation Chains
 
@@ -411,58 +402,21 @@ owns the data and type A wraps B just to implement a trait, either:
 2. Or eliminate the trait — if the caller can call B directly, the trait and the
    wrapper are unnecessary indirection
 
-- ❌ NO: `TuiInteractiveUi` implements `DisplayStateUi` by calling `self.renderer.set_*()`
+- ❌ NO: `Wrapper` implements `Renderer` by calling `self.inner.set_*()`
        which calls `self.state.set_*()` — 3 layers, zero behavior added
-- ✅ YES: The render loop calls `AppState::reduce_ui_state_event()` directly — no wrapper
+- ✅ YES: The caller invokes the owning type's method directly — no wrapper
 
 If you find yourself writing `fn method(&mut self) { self.inner.method() }`, stop.
 Either implement the trait on the inner type or eliminate the indirection.
 
-```
+## Configuration
 
-## Streaming HTTP
+nuop reads configuration from environment variables in `operator/src/nuop/config.rs`:
 
-When working with LLM streaming responses:
+- `NUOP_SOURCES_PATH` — directory containing operator scripts (default `/sources`)
+- `NUOP_MAPPINGS_PATH` — directory containing mapping YAML files (default `/config/mappings`)
 
-- ✅ Use `read_timeout()` — fires only when no bytes received; resets on each chunk
-- ❌ Never use `timeout()` — kills the entire request after a fixed deadline,
-  breaking long but active streaming responses
-
-## Configuration System
-
-See `docs/configuration.md` for the full field reference and provider examples.
-
-### Loading from config.toml
-
-`PluginConfig` is loaded via `toml_config::load()` from `config.toml`. All new features go through this single path.
-
-The `PluginConfig` struct holds top-level blocks: `models`, `providers`, `compaction`, `mcp`, `permissions`, `agents`, `preamble`, `a2a_enabled`, `session_store`.
-
-### Precedence chain (highest → lowest)
-
-1. CLI flags — applied in `resolve_with_new_config()`
-2. Persona front matter — `model:` field selects a role or literal model
-3. Role-level config — `ModelRoleConfig` record for the selected role (e.g. `models.heavy`), applied in `PluginConfig::resolve_model()`
-4. Model-level config — `providers.<name>.models.<name>` fields, applied in `PluginConfig::resolve_model()`
-5. Environment variables — `Config::from_env()` in `config/mod.rs`
-6. Built-in defaults — `unwrap_or(N)` at usage sites in executor/runtime
-
-### The `None` rule
-
-Every `Option` field on the runtime `Config` struct must have at least one real input path (env var, config.toml key, or CLI flag). **Hardcoding `None` in a parsing function is a bug.** This applies to `ModelRoleConfig` fields too — every optional field must be settable via the role config record, a model-level override, an env var, or a CLI flag. Intentional exceptions — fields resolved separately at runtime and not user-configurable:
-- `preamble` — resolved via `resolve_preamble()` from provider/model preamble config
-- `provider_impl` — resolved from the `provider` key inside the provider config block
-
-### Adding a new config field
-
-```
-1. Add field to `ModelRoleConfig` struct + parse in `toml_config::load()` models sub-record parsing
-2. Apply in `resolve_model()` role-level block (`if config.field.is_none()`)
-3. Add env var `AGENT_<FIELD_UPPER>` to `Config::from_env()`
-4. Add CLI flag in the CLI command module + apply in `apply_cli_flags()`
-5. Add tests in the corresponding `test/` directory file — NO inline tests
-6. Update `docs/configuration.md`
-```
+Each operator script declares its own controller config (name, group, version, kind, finalizer, namespace, label/field selectors, requeue intervals) via `get_script_config()` in `operator/src/nuop/reconciler/util.rs`. Managed mode overrides these fields from mapping YAML files.
 
 ### Test Structure (rust10x conventions)
 
@@ -490,10 +444,3 @@ fn test_module_function_variant() -> Result<()> {
 - No `unwrap()` — use `.ok_or("should be ...")?`
 - Test support functions at the end under `// -- Test Support` (inline) or `// region: --- Test Support` (dedicated file)
 - For temp data files, use paths like `tests-data/.tmp/test_function_name/`
-
-## Docs Guardrails (Tool/Authz/TUI changes)
-
-When changing tool handler modules, permission UX, or TUI transcript rendering:
-
-- Follow `docs/contribution-guardrails.md` checklist (inline permission card, viewport invariants, sticky controls)
-- Keep `docs/usage.md` aligned with user-visible behavior changes
