@@ -31,14 +31,14 @@ Every operator script must implement three main functions in `mod.nu`:
 ### 1. Create Script Directory
 
 ```bash
-mkdir -p operator/scripts/my-operator
-cd operator/scripts/my-operator
+mkdir -p docs/examples/my-operator/scripts
+cd docs/examples/my-operator
 ```
 
 ### 2. Implement mod.nu
 
 ```nushell
-# operator/scripts/my-operator/mod.nu
+# docs/examples/my-operator/scripts/mod.nu
 
 # Configuration function - defines operator behavior
 def "main config" [] {
@@ -103,7 +103,7 @@ def "main finalize" [] {
 
 ```bash
 # Test configuration
-echo '{}' | nu operator/scripts/my-operator/mod.nu config
+echo '{}' | nu docs/examples/my-operator/scripts/mod.nu config
 
 # Test reconcile with sample resource (YAML format)
 echo 'apiVersion: v1
@@ -114,7 +114,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: my-operator
 data:
-  key: value' | nu operator/scripts/my-operator/mod.nu reconcile
+  key: value' | nu docs/examples/my-operator/scripts/mod.nu reconcile
 ```
 
 ## Next Steps

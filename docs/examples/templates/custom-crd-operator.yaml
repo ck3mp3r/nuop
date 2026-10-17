@@ -139,7 +139,7 @@ spec:
           env:
             - name: NUOP_MODE
               value: standard
-            - name: RUST_LOG
+            - name: LOG_LEVEL
               value: info
             # Optional: Override the sources root
             # - name: NUOP_SOURCES_PATH

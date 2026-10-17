@@ -1,0 +1,65 @@
+---
+# CockroachDB Dev Operator — RBAC
+#
+# Grants the operator permission to install the CrdbCluster CRD, to watch and
+# patch CrdbCluster resources, and to manage the StatefulSet and Services it owns.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cockroachdb-dev-sa
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cockroachdb-dev
+rules:
+  # CRD installation (install-crds applies the CrdbCluster CRD on startup)
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "create", "update", "patch"]
+
+  # CrdbCluster watch and status updates
+  - apiGroups: ["crdb.cockroachlabs.com"]
+    resources: ["crdbclusters"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["crdb.cockroachlabs.com"]
+    resources: ["crdbclusters/status"]
+    verbs: ["get", "update", "patch"]
+
+  # Owned resources
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Readiness checks
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+  # Cluster initialization (cockroach init via kubectl exec)
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cockroachdb-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cockroachdb-dev
+subjects:
+  - kind: ServiceAccount
+    name: cockroachdb-dev-sa
+    namespace: default

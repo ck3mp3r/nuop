@@ -1,0 +1,19 @@
+---
+# Example ConfigMap to replicate (add labels to replicate it)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-config
+  namespace: default
+  labels:
+    app.kubernetes.io/replicate: "yes"
+  annotations:
+    nuop.kemper.buzz/replicate-to: "dev,staging"
+data:
+  config.yaml: |
+    database:
+      host: localhost
+      port: 5432
+    api:
+      version: v1
+      timeout: 30s

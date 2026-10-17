@@ -39,7 +39,7 @@ def apply-crd [crd_name: string, doc: record] {
   }
 
   # Apply the CRD (idempotent - will update if different)
-  let result = ($doc | to yaml | kubectl apply -f - | complete)
+  let result = ($doc | to yaml | kubectl apply --server-side -f - | complete)
 
   if $result.exit_code != 0 {
     print $"❌ Error applying CRD ($crd_name): ($result.stderr)"

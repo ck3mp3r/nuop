@@ -121,17 +121,16 @@ def update-status [resource: record configmap_name: string greeting: string stat
     status: {
       greeting: $greeting
       configMapName: $configmap_name
-      lastUpdated: (date now | format date "%Y-%m-%dT%H:%M:%SZ")
+      lastUpdated: (date now | date to-timezone UTC | format date "%Y-%m-%dT%H:%M:%SZ")
       state: $state
-      message: $"Greeting ConfigMap '($configmap_name)' is ($state | str downcase)"
+      message: $"Greeting ConfigMap '($configmap_name)' is ($state | str lowercase)"
     }
   }
 
   # Apply status patch
+  let json = ($status_patch | to json -r)
   let patch_result = (
-    $status_patch
-    | to json
-    | kubectl patch greetingrequest $name -n $namespace --type=merge --subresource=status --patch-file=/dev/stdin
+    kubectl patch greetingrequest $name -n $namespace --type=merge --subresource=status --patch $json
     | complete
   )
 

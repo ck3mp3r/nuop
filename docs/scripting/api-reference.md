@@ -44,7 +44,7 @@ Scripts have access to these environment variables:
 |----------|-------------|
 | `KUBECONFIG` | Path to Kubernetes config file |
 | `NAMESPACE` | Namespace the operator is running in |
-| `RUST_LOG` | Log level configuration |
+| `LOG_LEVEL` | Log level configuration |
 
 ## Common Patterns
 
@@ -139,7 +139,7 @@ Test individual functions:
 
 ```bash
 # Test configuration returns valid format
-config_result=$(echo '{}' | nu operator/scripts/my-operator/mod.nu config)
+config_result=$(echo '{}' | nu docs/examples/my-operator/scripts/mod.nu config)
 echo $config_result | jq '.name'  # Should return script name
 ```
 
@@ -161,7 +161,7 @@ data:
 EOF
 
 # Get resource and test script
-kubectl get configmap test-configmap -o json | nu operator/scripts/my-operator/mod.nu reconcile
+kubectl get configmap test-configmap -o json | nu docs/examples/my-operator/scripts/mod.nu reconcile
 ```
 
 ### Local Development
@@ -170,7 +170,7 @@ Use the operator's built-in testing capabilities:
 
 ```bash
 # Run operator in standard mode with your scripts
-NUOP_SOURCES_PATH=./scripts op-run-standard
+NUOP_SOURCES_PATH=$PWD/docs/examples op-run-standard
 
 # Apply test resources and observe logs
 kubectl apply -f test-resources.yaml
@@ -219,13 +219,13 @@ kubectl logs -l app.kubernetes.io/name=nuop -f
 
 ```bash
 # Test script directly
-echo '{"test": "data"}' | nu operator/scripts/my-operator/mod.nu reconcile
+echo '{"test": "data"}' | nu docs/examples/my-operator/scripts/mod.nu reconcile
 
 # Check script syntax
-nu --check operator/scripts/my-operator/mod.nu
+nu --ide-check 100 docs/examples/my-operator/scripts/mod.nu
 
 # Run with verbose logging
-RUST_LOG=debug op-run-standard
+LOG_LEVEL=debug op-run-standard
 
 # Examine operator logs
 kubectl logs -l app.kubernetes.io/name=nuop --tail=100 -f

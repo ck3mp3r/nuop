@@ -1,13 +1,14 @@
 # Script Examples
 
-See the [operator/scripts](../../operator/scripts/) directory for complete working examples:
+See the [docs/examples](../examples/) directory for complete working examples:
 
 - **config-replicator**: Replicates ConfigMaps across namespaces
 - **secret-cloner**: Replicates Secrets with targeting controls
+- **cockroachdb-dev**: Reconciles `CrdbCluster` resources for local development
 
 These examples demonstrate real-world patterns and can serve as templates for your own operators.
 
-## Config Replicator (`operator/scripts/config-replicator/`)
+## Config Replicator (`docs/examples/config-replicator/`)
 
 The Config Replicator automatically replicates ConfigMaps across namespaces based on labels and annotations.
 
@@ -47,7 +48,7 @@ data:
 
 This ConfigMap will be replicated to the `production` and `staging` namespaces only.
 
-## Secret Cloner (`operator/scripts/secret-cloner/`)
+## Secret Cloner (`docs/examples/secret-cloner/`)
 
 The Secret Cloner automatically replicates Secrets across namespaces with the same targeting system as the Config Replicator.
 
@@ -87,6 +88,63 @@ data:
 
 This Secret will be replicated to all namespaces except `kube-system` and `monitoring`.
 
+## CockroachDB Dev Operator (`docs/examples/cockroachdb-dev/`)
+
+The CockroachDB Dev Operator reconciles `CrdbCluster` resources for local development. It is a lightweight alternative to the [CockroachDB operator](https://github.com/cockroachdb/helm-charts), deployed via Helm charts from the `cockroachdb/helm-charts` repository, and produces the same external interface, so Helm charts work the same in development and production.
+
+### Watched Resource
+- `CrdbCluster` (`crdb.cockroachlabs.com/v1beta1`)
+
+### Created Resources
+- StatefulSet `<metadata.name>` - one pod per node in `spec.regions`, container `db`
+- Discovery Service `<metadata.name>` - headless, for pod-to-pod DNS
+- Public Service `<metadata.name>-public` - `ClusterIP`, for clients
+- Secret `<metadata.name>-client` - connection details: `host`, `port`, `database`, `user`, `sslmode`, `uri`
+
+### Spec Fields
+- `spec.template.spec.image` - CockroachDB container image (default `cockroachdb/cockroach:v23.1.11`)
+- `spec.regions[].nodes` - number of pods (default 3, sum of all regions)
+- `spec.template.spec.grpcPort`, `spec.template.spec.httpPort`, `spec.template.spec.sqlPort` - service and container ports
+- `spec.template.spec.dataStore.volumeClaimTemplate.spec` - `volumeClaimTemplates` for the `datadir` volume (default `emptyDir`)
+- `spec.template.spec.startFlags.upsert`, `spec.template.spec.resourceRequirements`, `spec.template.metadata.labels`
+
+### Example Usage
+
+```yaml
+apiVersion: crdb.cockroachlabs.com/v1beta1
+kind: CrdbCluster
+metadata:
+  name: crdb-dev
+  namespace: default
+spec:
+  tlsEnabled: false
+  regions:
+    - code: local
+      nodes: 3
+  template:
+    spec:
+      image: cockroachdb/cockroach:v23.1.11
+      dataStore:
+        volumeClaimTemplate:
+          metadata: {}
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 1Gi
+            volumeMode: Filesystem
+```
+
+### Finalizers
+- `github.com/ck3mp3r-nuop-crdb-dev-finalizer`
+
+Finalization deletes the StatefulSet, both Services, and the client Secret. It does not delete PVCs, so data survives a cluster deletion.
+
+### Limitations
+- Insecure mode only. TLS and certificates are not supported.
+- Fixed `--cache` and `--max-sql-memory` of 256MiB.
+- No topology, ingress, node selectors, tolerations, or affinity.
+
 ## Common Features
 
 ### Replica Identification
@@ -111,4 +169,4 @@ Both operators are configured to requeue after 60 seconds when no changes are de
 
 - [Script Development Tutorial](README.md)
 - [Script API Reference](api-reference.md)
-- [operator/scripts/README.md](../../operator/scripts/README.md)
+- [docs/examples/](../examples/)

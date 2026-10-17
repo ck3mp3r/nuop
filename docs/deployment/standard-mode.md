@@ -137,7 +137,7 @@ spec:
       - name: operator
         image: your-registry/your-operator:v1.0.0
         env:
-        - name: RUST_LOG
+        - name: LOG_LEVEL
           value: info
         - name: NUOP_SOURCES_PATH
           value: /sources

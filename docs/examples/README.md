@@ -1,19 +1,19 @@
 # NuOperator Examples
 
-Working example configurations for the NuOperator CRD, organized by deployment mode. Each example uses real scripts from the nuop repository.
+Working example configurations for the NuOperator CRD. Each operator is self-contained at the top level with its scripts, manifests, and RBAC. Generic deployment templates live in `templates/`.
 
-## Standard Mode Examples
+## Standard Mode Templates
 
 Scripts are bundled into a custom container image at build time. See the [Standard Mode deployment guide](../deployment/standard-mode.md).
 
-| Example | Purpose |
+| Template | Purpose |
 |---------|---------|
-| [`standard/standard-mode.yaml`](standard/standard-mode.yaml) | Standard mode deployment with scripts bundled in a container image |
-| [`standard/custom-crd-operator.yaml`](standard/custom-crd-operator.yaml) | Standard mode with automatic CRD installation |
+| [`templates/standard-mode.yaml`](templates/standard-mode.yaml) | Standard mode deployment with scripts bundled in a container image |
+| [`templates/custom-crd-operator.yaml`](templates/custom-crd-operator.yaml) | Standard mode with automatic CRD installation |
 
 ```bash
-kubectl apply -f standard/standard-mode.yaml
-kubectl apply -f standard/custom-crd-operator.yaml
+kubectl apply -f templates/standard-mode.yaml
+kubectl apply -f templates/custom-crd-operator.yaml
 ```
 
 ### standard-mode.yaml
@@ -28,7 +28,7 @@ Shows Standard mode deployment with scripts bundled in container images.
 ```bash
 # Requires a custom image build first:
 # docker build -t your-registry/nuop-with-scripts .
-kubectl apply -f standard/standard-mode.yaml
+kubectl apply -f templates/standard-mode.yaml
 ```
 
 ### custom-crd-operator.yaml
@@ -41,25 +41,27 @@ Shows Standard mode with automatic CRD installation.
 - Custom resource reconciliation
 
 ```bash
-kubectl apply -f standard/custom-crd-operator.yaml
+kubectl apply -f templates/custom-crd-operator.yaml
 ```
 
-## Managed Mode Examples
+## Managed Mode Templates
 
 A manager watches `NuOperator` custom resources and provisions managed operator deployments. Scripts are fetched from git sources at runtime. See the [Manager + Managed Mode deployment guide](../deployment/managed-mode.md).
 
 | Example | Purpose |
 |---------|---------|
-| [`managed/minimal.yaml`](managed/minimal.yaml) | Minimal `NuOperator` CR — required fields only |
-| [`managed/config-replicator.yaml`](managed/config-replicator.yaml) | ConfigMap replication across namespaces |
-| [`managed/secret-cloner.yaml`](managed/secret-cloner.yaml) | Secret cloning across namespaces |
-| [`managed/local-development.yaml`](managed/local-development.yaml) | Local development with volume-mounted scripts |
+| [`templates/minimal.yaml`](templates/minimal.yaml) | Minimal `NuOperator` CR — required fields only |
+| [`config-replicator/managed/nuoperator.yaml`](config-replicator/managed/nuoperator.yaml) | ConfigMap replication across namespaces |
+| [`secret-cloner/managed/nuoperator.yaml`](secret-cloner/managed/nuoperator.yaml) | Secret cloning across namespaces |
+| [`templates/local-development.yaml`](templates/local-development.yaml) | Local development with volume-mounted scripts |
 
 ```bash
-kubectl apply -f managed/minimal.yaml
-kubectl apply -f managed/config-replicator.yaml
-kubectl apply -f managed/secret-cloner.yaml
-kubectl apply -f managed/local-development.yaml
+kubectl apply -f templates/minimal.yaml
+kubectl apply -f config-replicator/rbac.yaml
+kubectl apply -f config-replicator/managed/nuoperator.yaml
+kubectl apply -f secret-cloner/rbac.yaml
+kubectl apply -f secret-cloner/managed/nuoperator.yaml
+kubectl apply -f templates/local-development.yaml
 ```
 
 ### minimal.yaml
@@ -71,9 +73,9 @@ The simplest possible `NuOperator` configuration for learning the basics.
 - No RBAC (uses the default service account)
 - Basic mapping configuration
 
-### config-replicator.yaml
+### config-replicator
 
-Demonstrates ConfigMap replication across namespaces using the built-in `config-replicator` script.
+Demonstrates ConfigMap replication across namespaces using the built-in `config-replicator` script. See [`config-replicator/`](config-replicator/) for the RBAC, standard-mode Deployment, and managed-mode manifests.
 
 **Features shown**:
 - Manager + Managed mode deployment
@@ -82,9 +84,9 @@ Demonstrates ConfigMap replication across namespaces using the built-in `config-
 - Label-based resource selection
 - Complete example with a test ConfigMap
 
-### secret-cloner.yaml
+### secret-cloner
 
-Demonstrates Secret cloning across namespaces using the built-in `secret-cloner` script.
+Demonstrates Secret cloning across namespaces using the built-in `secret-cloner` script. See [`secret-cloner/`](secret-cloner/) for the RBAC, standard-mode Deployment, and managed-mode manifests.
 
 **Features shown**:
 - Secret management operations
@@ -104,8 +106,43 @@ Shows how to develop and test scripts locally using volume mounts.
 
 ```bash
 # Modify the hostPath to point to your local script directory
-kubectl apply -f managed/local-development.yaml
+kubectl apply -f templates/local-development.yaml
 ```
+
+## Operator Examples
+
+Complete operators that reconcile a custom resource, with manifests for both deployment modes.
+
+### CockroachDB Dev Operator
+
+[`cockroachdb-dev/`](cockroachdb-dev/) reconciles `CrdbCluster` resources (`crdb.cockroachlabs.com/v1beta1`) for local development. It is a lightweight alternative to the [CockroachDB operator](https://github.com/cockroachdb/helm-charts) and produces the same external interface, so Helm charts work the same in development and production.
+
+| File | Purpose |
+|------|---------|
+| [`cockroachdb-dev/rbac.yaml`](cockroachdb-dev/rbac.yaml) | ServiceAccount, ClusterRole, and ClusterRoleBinding |
+| [`cockroachdb-dev/docker/Dockerfile`](cockroachdb-dev/docker/Dockerfile) | Standard mode image with the script and CRD bundled |
+| [`cockroachdb-dev/standard/deployment.yaml`](cockroachdb-dev/standard/deployment.yaml) | Standard mode Deployment |
+| [`cockroachdb-dev/managed/nuoperator.yaml`](cockroachdb-dev/managed/nuoperator.yaml) | Managed mode `NuOperator` CR |
+| [`cockroachdb-dev/crdb-cluster.yaml`](cockroachdb-dev/crdb-cluster.yaml) | Example `CrdbCluster` for local development |
+
+**Standard mode**:
+
+```bash
+docker build -t cockroachdb-dev -f docs/examples/cockroachdb-dev/docker/Dockerfile docs/examples/cockroachdb-dev/
+kubectl apply -f cockroachdb-dev/rbac.yaml
+kubectl apply -f cockroachdb-dev/standard/deployment.yaml
+kubectl apply -f cockroachdb-dev/crdb-cluster.yaml
+```
+
+**Managed mode**:
+
+```bash
+kubectl apply -f cockroachdb-dev/rbac.yaml
+kubectl apply -f cockroachdb-dev/managed/nuoperator.yaml
+kubectl apply -f cockroachdb-dev/crdb-cluster.yaml
+```
+
+See [`cockroachdb-dev/README.md`](cockroachdb-dev/README.md) for the full operator reference.
 
 ## Testing the Examples
 
@@ -118,7 +155,9 @@ kubectl apply -f managed/local-development.yaml
 
 ```bash
 # Apply the config-replicator example
-kubectl apply -f managed/config-replicator.yaml
+kubectl apply -f config-replicator/rbac.yaml
+kubectl apply -f config-replicator/managed/nuoperator.yaml
+kubectl apply -f config-replicator/managed/example-configmap.yaml
 
 # The example includes a test ConfigMap - check if it gets replicated
 kubectl get configmaps -A -l app.kubernetes.io/replicated-by
@@ -131,7 +170,9 @@ kubectl logs -l app.kubernetes.io/name=nuop
 
 ```bash
 # Apply the secret-cloner example
-kubectl apply -f managed/secret-cloner.yaml
+kubectl apply -f secret-cloner/rbac.yaml
+kubectl apply -f secret-cloner/managed/nuoperator.yaml
+kubectl apply -f secret-cloner/managed/example-secret.yaml
 
 # The example includes a test Secret - check if it gets cloned
 kubectl get secrets -A -l app.kubernetes.io/replicated-by
@@ -151,7 +192,7 @@ The managed examples use the Manager + Managed deployment mode where:
 
 ### Real Script Integration
 
-Examples use actual working scripts from `operator/scripts/`:
+Examples use actual working scripts from `docs/examples/`:
 - `config-replicator` - Replicates ConfigMaps to target namespaces
 - `secret-cloner` - Clones Secrets to target namespaces
 
@@ -171,14 +212,14 @@ Scripts watch for resources with specific labels:
 - **Best for**: Production deployments with fixed script sets
 - **How it works**: Scripts are bundled into container images at build time
 - **Script source**: Bundled in container at `/sources`
-- **Examples**: [`standard/`](standard/)
+- **Examples**: [`templates/standard-mode.yaml`](templates/standard-mode.yaml), [`cockroachdb-dev/standard/`](cockroachdb-dev/standard/), [`config-replicator/standard/`](config-replicator/standard/), [`secret-cloner/standard/`](secret-cloner/standard/)
 
 ### Manager + Managed Mode
 
 - **Best for**: Dynamic operator provisioning, multi-tenant environments
 - **How it works**: Manager watches NuOperator CRDs and creates managed operator deployments
 - **Script source**: Fetched from Git repositories or other sources at runtime
-- **Examples**: [`managed/`](managed/)
+- **Examples**: [`templates/minimal.yaml`](templates/minimal.yaml), [`cockroachdb-dev/managed/`](cockroachdb-dev/managed/), [`config-replicator/managed/`](config-replicator/managed/), [`secret-cloner/managed/`](secret-cloner/managed/)
 
 ## Customization
 

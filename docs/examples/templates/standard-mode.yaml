@@ -74,7 +74,7 @@ spec:
               value: standard
             - name: NUOP_SOURCES_PATH
               value: /sources
-            - name: RUST_LOG
+            - name: LOG_LEVEL
               value: info
           resources:
             requests:

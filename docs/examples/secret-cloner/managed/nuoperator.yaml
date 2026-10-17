@@ -1,0 +1,24 @@
+---
+# Secret Cloner Example
+# Demonstrates using the actual secret-cloner script from the nuop repository
+
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: secret-cloner
+  namespace: default
+spec:
+  serviceAccountName: secret-cloner-sa
+  env:
+    - name: LOG_LEVEL
+      value: info
+  mappings:
+    - name: secret-cloner
+      group: ""
+      version: v1
+      kind: Secret
+      labelSelectors:
+        app.kubernetes.io/replicate: "yes"
+  sources:
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/secret-cloner/scripts
+      path: secret-cloner

@@ -143,10 +143,10 @@ nix flake show
 **Test scripts locally:**
 ```bash
 # Test script configuration
-echo '{}' | nu operator/scripts/your-script/mod.nu config
+echo '{}' | nu docs/examples/your-script/scripts/mod.nu config
 
 # Test with sample resource
-cat test-resource.yaml | nu operator/scripts/your-script/mod.nu reconcile
+cat test-resource.yaml | nu docs/examples/your-script/scripts/mod.nu reconcile
 ```
 
 **Common script errors:**

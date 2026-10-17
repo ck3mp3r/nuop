@@ -23,8 +23,8 @@ spec:
       labelSelectors:
         app.kubernetes.io/replicate: "yes"
   sources:
-    - location: https://github.com/ck3mp3r/nuop.git?dir=operator/scripts
-      path: scripts
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/config-replicator/scripts
+      path: config-replicator
 
 ---
 # ServiceAccount for the managed child deployment

@@ -1,0 +1,36 @@
+---
+# ServiceAccount with appropriate RBAC for Secret cloning
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secret-cloner-sa
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secret-cloner
+rules:
+  # Secret permissions
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Namespace permissions (for cross-namespace cloning)
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: secret-cloner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: secret-cloner
+subjects:
+  - kind: ServiceAccount
+    name: secret-cloner-sa
+    namespace: default

@@ -1,0 +1,24 @@
+---
+# ConfigMap Replicator Example
+# Demonstrates using the actual config-replicator script from the nuop repository
+
+apiVersion: kemper.buzz/v1alpha1
+kind: NuOperator
+metadata:
+  name: config-replicator
+  namespace: default
+spec:
+  serviceAccountName: config-replicator-sa
+  env:
+    - name: LOG_LEVEL
+      value: info
+  mappings:
+    - name: config-replicator
+      group: ""
+      version: v1
+      kind: ConfigMap
+      labelSelectors:
+        app.kubernetes.io/replicate: "yes"
+  sources:
+    - location: https://github.com/ck3mp3r/nuop.git?dir=docs/examples/config-replicator/scripts
+      path: config-replicator

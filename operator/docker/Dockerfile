@@ -1,4 +1,4 @@
-FROM ghcr.io/nushell/nushell:0.108.0-alpine AS final
+FROM ghcr.io/nushell/nushell:0.116.1-alpine AS final
 
 USER root
 RUN apk add \
@@ -11,9 +11,7 @@ COPY --from=nix-result bin/operator /bin/
 COPY ./docker/entrypoint /bin/
 COPY ./docker/init-sources /bin/
 COPY ./docker/install-crds /bin/
-COPY ./scripts /sources
-
-RUN chown -R nushell:nushell /sources
+RUN mkdir -p /sources && chown -R nushell:nushell /sources
 
 USER nushell
 WORKDIR /sources

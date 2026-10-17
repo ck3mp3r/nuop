@@ -1,0 +1,29 @@
+---
+# Example CrdbCluster for local development.
+#
+# Requires the CrdbCluster CRD (crdbclusters.crdb.cockroachlabs.com). The CRD is
+# installed by the operator on startup, or manually with:
+#   kubectl apply -f https://raw.githubusercontent.com/cockroachdb/helm-charts/master/cockroachdb-operator/charts/operator/manifests/crds/crdb.cockroachlabs.com_crdbclusters.yaml
+
+apiVersion: crdb.cockroachlabs.com/v1beta1
+kind: CrdbCluster
+metadata:
+  name: crdb-dev
+  namespace: default
+spec:
+  tlsEnabled: false
+  regions:
+    - code: local
+      nodes: 3
+  template:
+    spec:
+      image: cockroachdb/cockroach:v23.1.11
+      dataStore:
+        volumeClaimTemplate:
+          metadata: {}
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 1Gi
+            volumeMode: Filesystem

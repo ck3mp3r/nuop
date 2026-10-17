@@ -10,7 +10,7 @@ metadata:
 spec:
   serviceAccountName: local-dev-sa
   env:
-    - name: RUST_LOG
+    - name: LOG_LEVEL
       value: debug
     - name: DEV_MODE
       value: "true"
@@ -58,7 +58,7 @@ spec:
           env:
             - name: NUOP_MODE
               value: managed
-            - name: RUST_LOG
+            - name: LOG_LEVEL
               value: debug
           volumeMounts:
             - name: dev-scripts
