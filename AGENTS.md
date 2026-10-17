@@ -44,7 +44,7 @@ operator/
 - The `mod` declaration name is independent of the filename — `mod foo_test` can point to `test/foo.rs`
 - Test support files (`helpers.rs`, `support.rs`, `shared.rs`, `driver.rs`, `utils.rs`) also live in `test/`
 - Keep test files focused and organized by module
-- **Test file size limit:** No test file shall exceed 500 lines. When a test file reaches this limit, split it into topical subfiles in a subdirectory of the same name (e.g. `test/session.rs` → `test/session/lifecycle.rs`, `test/session/cancel.rs`, etc.). Shared support code stays in a `test/session/support.rs` file. The `#[path]` wiring in the source module declares each split file as a separate `#[cfg(test)]` module
+- **Test file size limit:** No test file shall exceed 500 lines. When a test file reaches this limit, split it into topical subfiles in a subdirectory of the same name (e.g. `test/nuop/reconciler/controller.rs` → `test/nuop/reconciler/controller/reconcile.rs`, `test/nuop/reconciler/controller/scenarios.rs`, etc.). Shared support code stays in a `test/nuop/reconciler/controller/support.rs` file. The `#[path]` wiring in the source module declares each split file as a separate `#[cfg(test)]` module
 - Declare each test module from its production module with `#[cfg(test)]` and a `#[path]` attribute. `#[path]` resolves relative to the declaring file, so the path must escape `src/`:
   ```rust
   // region:    --- Tests
@@ -134,10 +134,10 @@ These test patterns are **banned**. They verify what the compiler already enforc
 
 ### Manual Verification
 
-When a task requires manual verification (e.g., terminal behavior, TUI rendering),
-run the binary in a real terminal and verify by hand. Do NOT:
+When a task requires manual verification (e.g., running the operator binary against a cluster, observing controller behavior),
+run the operator binary and verify by hand. Do NOT:
 
-- Write nushell scripts with `job spawn`, `job send`, `job kill` to automate terminal interaction
+- Write nushell scripts that spawn the operator and poll its output to automate cluster interaction
 - Write shell scripts that spawn the binary in a PTY and poll for exit
 - Invent test automation that is not in the task spec
 
@@ -366,7 +366,7 @@ the dead code.
   - **I**nterface Segregation: Many specific interfaces over one general
   - **D**ependency Inversion: Depend on abstractions, not concretions
 
-**DIP is a testability requirement, not just an architecture diagram concern.** If a constructor hardcodes a concrete function that performs I/O (HTTP client construction, TLS init, keychain access, database opening), unit tests cannot substitute a mock. The test either becomes an integration test (slow, fragile) or the production code gets `#[cfg(test)]` backdoors (banned). The correct response is: define a trait, inject it, and let tests provide a mock impl. See "Dependency Injection for Testability" above.
+**DIP is a testability requirement, not just an architecture diagram concern.** If a constructor hardcodes a concrete function that performs I/O (kube client construction, TLS init, script execution, database opening), unit tests cannot substitute a mock. The test either becomes an integration test (slow, fragile) or the production code gets `#[cfg(test)]` backdoors (banned). The correct response is: define a trait, inject it, and let tests provide a mock impl. See "Dependency Injection for Testability" above.
 
 ### Trait Design
 
